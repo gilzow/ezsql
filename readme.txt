@@ -6,8 +6,8 @@ Author URI: http://wordpress.ieonly.com/
 Contributors: scheeeli
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=8VWNB5QEJ55TJ
 Tags: plugin, admin, reports, sql, mysql, query, customize
-Stable tag: 1.1.12.14
-Version: 1.1.12.14
+Stable tag: 1.1.12.15
+Version: 1.1.12.15
 Requires at least: 2.6
 Tested up to: 3.3
 
@@ -15,7 +15,7 @@ This plugin allows you to creat reports simply by entering in the SQL.
 
 == Description ==
 
-Just place some SQL on in the box and save it as a report.
+Just place some SQL on in the box and save it as a report. You can save multiple reports and they will be listed on the Admin Menu so you can quickly run them again anytime with just one click.
 
 Plugin
 
@@ -32,15 +32,22 @@ Start Creating and Saving Reports.
 
 == Screenshots ==
 
-1. This is a screen shot of the Admin Menu with an example report.
+1. This is a screen shot of the Admin Menu with some example reports.
 
 == Changelog ==
 
+= 1.1.12.15 =
+* Fixed aditional plugin links.
+* Made the Save button label dynamic depending on the state of the report fields.
+
 = 1.1.12.14 =
-* First versions uploaded to WordPress.
+* First version uploaded to WordPress.
 
 == Upgrade Notice ==
 
+= 1.1.12.15 =
+* Fixed the aditional plugin links and made the Save button label dynamic.
+
 = 1.1.12.14 =
-First versions available through WordPress.
+First version available through WordPress.
 

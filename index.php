@@ -5,10 +5,10 @@ Plugin URI: http://wordpress.ieonly.com/category/my-plugins/sql-reports/
 Author: Eli Scheetz
 Author URI: http://wordpress.ieonly.com/
 Description: This plugin executes your predefined custom MySQL queries on the Reports tab in your WordPress Admin panel.
-Version: 1.1.12.14
+Version: 1.1.12.15
 */
 $_SESSION['eli_debug_microtime']['include(ELISQLREPORTS)'] = microtime(true);
-$ELISQLREPORTS_Version='1.1.12.14';
+$ELISQLREPORTS_Version='1.1.12.15';
 $ELISQLREPORTS_plugin_dir='ELISQLREPORTS';
 /**
  * ELISQLREPORTS Main Plugin File
@@ -142,7 +142,23 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_report_form_start'] = microtime(
 	if (strlen(trim($ELISQLREPORTS_Report_SQL))>0)
 		$Report_SQL = $ELISQLREPORTS_Report_SQL;
 	echo 'Type or Paste your SQL into this box and give your report a name<br />
-	<textarea width="100%" style="width: 100%;" rows="10" name="rSQL" class="shadowed-box">'.($Report_SQL).'</textarea><br /><br />Report Name: <input type="text" name="rName" value="'.($Report_Name).'" /> <input type="submit" value="Save" /></form></div>';
+	<textarea width="100%" style="width: 100%;" rows="10" name="rSQL" class="shadowed-box" onchange="setButtonValue(\'Update Report\');">'.($Report_SQL).'</textarea><br /><br />Report Name: <input type="text" id="reportName" name="rName" value="'.($Report_Name).'" onchange="setButtonValue(\'Save Report\');" /> <input id="gobutton" type="submit" value="'.(strlen($Report_Name)>0?'Refresh Report':'Test SQL').'" class="button-primary" /></form></div>
+<script>
+var oldName="'.($Report_Name).'";
+function setButtonValue(newval) {
+	rN = document.getElementById(\'reportName\').value;
+	if (oldName.length > 0) {
+		if (rN.length > 0 && rN != oldName)
+			newval = newval + " As";
+	} else {
+		if (rN.length > 0)
+			newval = "Save Report";
+		else
+			newval = "Test SQL";
+	}
+	document.getElementById(\'gobutton\').value = newval;
+}
+</script>';
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_report_form_end'] = microtime(true);
 }
 function ELISQLREPORTS_default_report($Rtitle = '') {
@@ -259,22 +275,22 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_init_start'] = microtime(true);
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_init_end'] = microtime(true);
 }
 function ELISQLREPORTS_set_plugin_action_links($links_array, $plugin_file) {
-	if ($plugin_file == __file__) {
+	if ($plugin_file == substr(__file__, (-1 * strlen($plugin_file)))) {
 		$_SESSION['eli_debug_microtime']['ELISQLREPORTS_set_plugin_action_links'] = microtime(true);
 		$links_array = array_merge(array('<a href="admin.php?page=ELISQLREPORTS-create-report">'.__( 'Create a Report' ).'</a>'), $links_array);
 	}
 	return $links_array;
 }
 function ELISQLREPORTS_set_plugin_row_meta($links_array, $plugin_file) {
-	if ($plugin_file == strtolower($ELISQLREPORTS_plugin_dir).'/index.php') {
-		$_SESSION['eli_debug_microtime']['ELISQLREPORTS_set_plugin_row_meta(Array)'] = microtime(true);
+	if ($plugin_file == substr(__file__, (-1 * strlen($plugin_file)))) {
+		$_SESSION['eli_debug_microtime']['ELISQLREPORTS_set_plugin_row_meta'] = microtime(true);
 		$links_array = array_merge($links_array, array('<a target="_blank" href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=8VWNB5QEJ55TJ">'.__( 'Donate' ).'</a>'));
 	}
 	return $links_array;
 }
 $ELISQLREPORTS_plugin_home='http://wordpress.ieonly.com/';
-$ELISQLREPORTS_updated_images_path='wp-content/plugins/UPDATE/images/';
-$ELISQLREPORTS_Logo_IMG='ELI-16x16.gif';
+$ELISQLREPORTS_updated_images_path='wp-content/plugins/update/images/';
+$ELISQLREPORTS_Logo_IMG='ELISQLREPORTS-16x16.gif';
 $ELISQLREPORTS_Report_SQL="";
 register_activation_hook(__FILE__,$ELISQLREPORTS_plugin_dir.'_install');
 add_action('admin_init', $ELISQLREPORTS_plugin_dir.'_init');
