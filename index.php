@@ -5,10 +5,10 @@ Plugin URI: http://wordpress.ieonly.com/category/my-plugins/sql-reports/
 Author: Eli Scheetz
 Author URI: http://wordpress.ieonly.com/
 Description: This plugin executes your predefined custom MySQL queries on the Reports tab in your WordPress Admin panel.
-Version: 1.1.12.15
+Version: 1.1.12.16
 */
 $_SESSION['eli_debug_microtime']['include(ELISQLREPORTS)'] = microtime(true);
-$ELISQLREPORTS_Version='1.1.12.15';
+$ELISQLREPORTS_Version='1.1.12.16';
 $ELISQLREPORTS_plugin_dir='ELISQLREPORTS';
 /**
  * ELISQLREPORTS Main Plugin File
@@ -100,14 +100,20 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_display_File_start'] = microtime
 	}
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_display_File_end'] = microtime(true);
 }
-function ELISQLREPORTS_view_report($Rtitle, $MySQL) {
+function ELISQLREPORTS_view_report($Rtitle = '', $MySQL = '') {
 	global $ELISQLREPORTS_plugin_dir, $ELISQLREPORTS_Report_SQL;
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_start'] = microtime(true);
 	if ($Rtitle == '')
 		$Rtitle = 'Unsaved Report';
-	echo '<h2>'.$Rtitle.'</h2>';
-	if (strlen(trim($ELISQLREPORTS_Report_SQL))>0)
-		$MySQL = $ELISQLREPORTS_Report_SQL;
+	elseif ($MySQL == '') {
+		$ELISQLREPORTS_reports_array = get_option($ELISQLREPORTS_plugin_dir.'_reports_array');
+		if (isset($ELISQLREPORTS_reports_array) && is_array($ELISQLREPORTS_reports_array) && isset($ELISQLREPORTS_reports_array[$Rtitle]))
+			$MySQL = ($ELISQLREPORTS_reports_array[$Rtitle]);
+		else
+			$MySQL = $ELISQLREPORTS_Report_SQL;
+	}
+	echo '<div id="'.sanitize_title($Rtitle).'" class="shadowed-box rounded-corners" style="float: left; background-color: #DDFFCC;"><h2>'.$Rtitle.'</h2>';
+//	if (strlen(trim($ELISQLREPORTS_Report_SQL))>0)		$MySQL = $ELISQLREPORTS_Report_SQL;
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_start_mysql_query'] = microtime(true);
 	$result = mysql_query($MySQL);
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_end_mysql_query'] = microtime(true);
@@ -129,7 +135,7 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_end_while_mysql_fetc
 		} else
 			echo '<li>Report is Empty!';
 	}
-	echo '</div></div>';
+	echo '</div></div></div>';
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_end'] = microtime(true);
 }
 function ELISQLREPORTS_report_form($Report_Name = '', $Report_SQL = '') {
