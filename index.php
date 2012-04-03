@@ -5,10 +5,10 @@ Plugin URI: http://wordpress.ieonly.com/category/my-plugins/sql-reports/
 Author: Eli Scheetz
 Author URI: http://wordpress.ieonly.com/
 Description: This plugin executes your predefined custom MySQL queries on the Reports tab in your WordPress Admin panel.
-Version: 1.1.12.16
+Version: 1.2.03.16
 */
 $_SESSION['eli_debug_microtime']['include(ELISQLREPORTS)'] = microtime(true);
-$ELISQLREPORTS_Version='1.1.12.16';
+$ELISQLREPORTS_Version='1.2.03.16';
 $ELISQLREPORTS_plugin_dir='ELISQLREPORTS';
 /**
  * ELISQLREPORTS Main Plugin File
@@ -37,16 +37,25 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_install_start'] = microtime(true
 		die("This Plugin requires WordPress version 2.6 or higher");
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_install_end'] = microtime(true);
 }
+$encode = '/[\?\-a-z\: \.\=\/A-Z\&\_]/';
 function ELISQLREPORTS_display_header($pTitle) {
 	global $ELISQLREPORTS_plugin_dir, $ELISQLREPORTS_plugin_home, $ELISQLREPORTS_Version, $ELISQLREPORTS_updated_images_path;
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_display_header_start'] = microtime(true);
+	$wait_img_URL = plugins_url('/images/', __FILE__).'wait.gif';
 	echo '<style>
-	.rounded-corners {margin: 10px; padding: 10px; -webkit-border-radius: 10px; -moz-border-radius: 10px; border: 1px solid #000000;}
-	.shadowed-box {box-shadow: -3px 3px 3px #666666; -moz-box-shadow: -3px 3px 3px #666666; -webkit-box-shadow: -3px 3px 3px #666666;}
-	.shadowed-text {text-shadow: #0000FF -1px 1px 1px;}
-	.sidebar-box {background-color: #CCCCCC;}
-	#right-sidebar {float: right; width: 230px;}
-	#main-section {margin-right: 250px;}
+.rounded-corners {margin: 10px; padding: 10px; -webkit-border-radius: 10px; -moz-border-radius: 10px; border: 1px solid #000000;}
+.shadowed-box {box-shadow: -3px 3px 3px #666666; -moz-box-shadow: -3px 3px 3px #666666; -webkit-box-shadow: -3px 3px 3px #666666;}
+.sidebar-box {background-color: #CCCCCC;}
+.sidebar-links {padding: 0 15px; list-style: none;}
+.shadowed-text {text-shadow: #0000FF -1px 1px 1px;}
+.sub-option {float: left; margin: 3px 5px;}
+.pp_left {height: 28px; float: left; background-position: top center;}
+.pp_right {height: 18px; float: right; background-position: bottom center;}
+.pp_donate {margin: 3px 5px; background-repeat: no-repeat; background-image: url(\'https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif\');}
+.pp_left input {width: 100px; height: 28px;}
+.pp_right input {width: 130px; height: 18px;}
+#right-sidebar {float: right; margin-right: 10px; width: 290px;}
+#main-section {margin-right: 310px;}
 </style>
 <script>
 function showhide(id) {
@@ -58,48 +67,56 @@ function showhide(id) {
 }
 </script>
 <h1>ELI\'s Custom SQL Reports '.$pTitle.'</h1>
-<div id="right-sidebar">
-<div id="pluginupdates" class="shadowed-box rounded-corners sidebar-box"><center><h3 class="shadowed-text">Plugin Updates</h3></center>
-	<div id="findUpdates"><center>Searching for updates ...<br /><img src="'.$wait_img_URL.'" alt="Wait..." /><br /><input type="button" value="Cancel" onclick="document.getElementById(\'findUpdates\').innerHTML = \'Could not find server!\';" /></center></div>
-<script type="text/javascript" src="'.$ELISQLREPORTS_plugin_home.$ELISQLREPORTS_updated_images_path.'?js='.$ELISQLREPORTS_Version.'&p='.$ELISQLREPORTS_plugin_dir.'"></script>
-</div>
-<div id="pluginlinks" class="shadowed-box rounded-corners sidebar-box"><center><h3 class="shadowed-text">Plugin Links</h3>
-<table><tr><td>
-<li><a href="javascript:showhide(\'div_Readme\');">Readme File</a>
-<li><a href="javascript:showhide(\'div_License\');">License File</a>
-<li><a target="_blank" href="'.$ELISQLREPORTS_plugin_home.'category/my-plugins/sql-reports/">Plugin URI</a>
-<li><a target="_blank" href="http://wordpress.org/extend/plugins/'.strtolower($ELISQLREPORTS_plugin_dir).'/faq/">Plugin FAQs</a>
-<li><a target="_blank" href="http://wordpress.org/extend/plugins/'.strtolower($ELISQLREPORTS_plugin_dir).'/stats/">Download Stats</a>
-<li><a target="_blank" href="http://wordpress.org/tags/'.strtolower($ELISQLREPORTS_plugin_dir).'">Forum</a>
-</td></tr></table>
-</center></div>
-	<div id="authorlinks" class="shadowed-box rounded-corners sidebar-box"><center><h3 class="shadowed-text">Author Links</h3>Feed My Family:<br /><form action="https://www.paypal.com/cgi-bin/webscr" method="post">
-<input type="hidden" name="cmd" value="_s-xclick">
-<input type="hidden" name="hosted_button_id" value="8VWNB5QEJ55TJ">
-<input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!">
-<img alt="" border="0" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif" width="1" height="1">
-</form>
-<table><tr><td>
-<li><a target="_blank" href="'.$ELISQLREPORTS_plugin_home.'category/my-plugins/">ELI\'s Blog</a>
-<li><a target="_blank" href="http://wordpress.org/extend/plugins/profile/scheeeli">WordPress Profile</a>
-</td></tr></table>
-</center></div>
+<div id="right-sidebar" class="metabox-holder">
+	<div id="pluginupdates" class="shadowed-box stuffbox"><h3 class="hndle"><span>Plugin Updates</span></h3>
+		<div id="findUpdates"><center>Searching for updates ...<br /><img src="'.$wait_img_URL.'" alt="Wait..." /><br /><input type="button" value="Cancel" onclick="document.getElementById(\'findUpdates\').innerHTML = \'Could not find server!\';" /></center></div>
+	<script type="text/javascript" src="'.$ELISQLREPORTS_plugin_home.$ELISQLREPORTS_updated_images_path.'?js='.$ELISQLREPORTS_Version.'&p='.$ELISQLREPORTS_plugin_dir.'"></script>
 	</div>
-	<div id="admin-page-container">
-	<div id="main-section">';
+	<div id="pluginlinks" class="shadowed-box stuffbox"><h3 class="hndle"><span>Plugin Links</span></h3>
+		<div class="inside">
+		<form action="https://www.paypal.com/cgi-bin/webscr" method="post">
+			<table cellpadding=0 cellspacing=0><tr><td>
+				<input type="hidden" name="cmd" value="_s-xclick">
+				<input type="hidden" name="hosted_button_id" value="7K3TSGPAENSGS">
+				<div class="pp_donate pp_left"><input type="image" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif" border="0" name="submit" alt="Make a Donation with PayPal"></div>
+				<div class="pp_donate pp_right"><input type="image" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif" border="0" name="submitc" alt="Make a Donation with your credit card at PayPal"></div>
+			</td></tr><tr><td>
+				<ul class="sidebar-links">
+					<li>Included with this Plugin<ul class="sidebar-links">
+						<li><a href="javascript:showhide(\'div_Readme\');">Readme File</a>
+						<li><a href="javascript:showhide(\'div_License\');">License File</a>
+					</ul></li>
+					<li>on <a target="_blank" href="http://wordpress.org/extend/plugins/profile/scheeeli">WordPress.org</a><ul class="sidebar-links">
+						<li><a target="_blank" href="http://wordpress.org/extend/plugins/'.strtolower($ELISQLREPORTS_plugin_dir).'/faq/">Plugin FAQs</a>
+						<li><a target="_blank" href="http://wordpress.org/extend/plugins/'.strtolower($ELISQLREPORTS_plugin_dir).'/stats/">Download Stats</a>
+						<li><a target="_blank" href="http://wordpress.org/tags/'.strtolower($ELISQLREPORTS_plugin_dir).'">Forum Posts</a>
+					</ul></li>
+					<li>on <a target="_blank" href="'.$ELISQLREPORTS_plugin_home.'category/my-plugins/">Eli\'s Blog</a><ul class="sidebar-links">
+						<li><a target="_blank" href="'.$ELISQLREPORTS_plugin_home.'category/my-plugins/sql-reports/">Plugin URI</a>
+					</ul></li>
+				</ul>
+			</td></tr></table>
+		</form>
+		</div>
+	</div>
+</div>
+<div id="admin-page-container">
+	<div id="main-section" class="metabox-holder">';
 	ELISQLREPORTS_display_File('Readme');
 	ELISQLREPORTS_display_File('License');
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_display_header_end'] = microtime(true);
 }
 function ELISQLREPORTS_display_File($dFile) {
-$_SESSION['eli_debug_microtime']['ELISQLREPORTS_display_File_start'] = microtime(true);
 	if (file_exists(dirname(__FILE__).'/'.strtolower($dFile).'.txt')) {
 		echo '<div id="div_'.$dFile.'" class="shadowed-box rounded-corners sidebar-box" style="display: none;"><a class="rounded-corners" style="float: right; padding: 0 4px; margin: 0 0 0 30px; text-decoration: none; color: #CC0000; background-color: #FFCCCC; border: solid #FF0000 1px;" href="javascript:showhide(\'div_'.$dFile.'\');">X</a><h1>'.$dFile.' File</h1><textarea disabled="yes" width="100%" style="width: 100%;" rows="20">';
 		include(strtolower($dFile).'.txt');
 		echo '</textarea></div>';
 	}
-$_SESSION['eli_debug_microtime']['ELISQLREPORTS_display_File_end'] = microtime(true);
 }
+if (!function_exists('ur1encode')) { function ur1encode($url) {
+	global $encode;
+	return preg_replace($encode, '\'%\'.substr(\'00\'.strtoupper(dechex(ord(\'\0\'))),-2);', $url);
+}}
 function ELISQLREPORTS_view_report($Rtitle = '', $MySQL = '') {
 	global $ELISQLREPORTS_plugin_dir, $ELISQLREPORTS_Report_SQL;
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_start'] = microtime(true);
@@ -113,7 +130,18 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_start'] = microtime(
 			$MySQL = $ELISQLREPORTS_Report_SQL;
 	}
 	echo '<div id="'.sanitize_title($Rtitle).'" class="shadowed-box rounded-corners" style="float: left; background-color: #DDFFCC;"><h2>'.$Rtitle.'</h2>';
-//	if (strlen(trim($ELISQLREPORTS_Report_SQL))>0)		$MySQL = $ELISQLREPORTS_Report_SQL;
+	if (isset($_GET['SQL_ORDER_BY']) && is_array($_GET['SQL_ORDER_BY'])) {
+		foreach ($_GET['SQL_ORDER_BY'] as $_GET_SQL_ORDER_BY) {
+			if (strlen(trim($_GET_SQL_ORDER_BY))>0) {
+				if ($pos = strripos($MySQL, " ORDER BY "))
+					$MySQL = substr($MySQL, 0, $pos + 10)."`".trim($_GET_SQL_ORDER_BY)."`, ".substr($MySQL, $pos + 10);
+				elseif ($pos = strripos($MySQL, " LIMIT "))
+					$MySQL = substr($MySQL, 0, $pos)." ORDER BY `".trim($_GET_SQL_ORDER_BY)."`".substr($MySQL, $pos);
+				else
+					$MySQL .= " ORDER BY `".trim($_GET_SQL_ORDER_BY)."`";
+			}
+		}
+	}//	if (strlen(trim($ELISQLREPORTS_Report_SQL))>0)		$MySQL = $ELISQLREPORTS_Report_SQL;
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_start_mysql_query'] = microtime(true);
 	$result = mysql_query($MySQL);
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_end_mysql_query'] = microtime(true);
@@ -123,7 +151,7 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_end_mysql_query'] = 
 		if ($rs = mysql_fetch_assoc($result)) {
 			echo '<table border=1 cellspacing=0><tr>';
 			foreach ($rs as $field => $value)
-				echo '<td>&nbsp;<b>'.$field.'</b>&nbsp;</td>';
+				echo '<td>&nbsp;<b><a href="'.$_SERVER['REQUEST_URI'].'&SQL_ORDER_BY[]='.$field.'">'.$field.'</a></b>&nbsp;</td>';
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_start_while_mysql_fetch_assoc'] = microtime(true);
 			do {
 				echo '</tr><tr>';
@@ -207,15 +235,22 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_create_report_start'] = microtim
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_create_report_end'] = microtime(true).$ELISQLREPORTS_Report_SQL;
 }
 function ELISQLREPORTS_menu() {
-	global $ELISQLREPORTS_plugin_dir, $wp_version, $ELISQLREPORTS_Version, $ELISQLREPORTS_plugin_home, $ELISQLREPORTS_Logo_IMG, $ELISQLREPORTS_updated_images_path, $ELISQLREPORTS_Report_SQL;
+	global $ELISQLREPORTS_images_path, $ELISQLREPORTS_plugin_dir, $wp_version, $ELISQLREPORTS_Version, $ELISQLREPORTS_plugin_home, $ELISQLREPORTS_Logo_IMG, $ELISQLREPORTS_updated_images_path, $ELISQLREPORTS_Report_SQL;
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_menu_start'] = microtime(true);
-	$Logo_URL = plugins_url('/images/', __FILE__).$ELISQLREPORTS_Logo_IMG;
+	$ELISQLREPORTS_settings_array = get_option($ELISQLREPORTS_plugin_dir.'_settings_array');
 	$img_path = basename(__FILE__);
-	$Logo_Path = 'images/'.$ELISQLREPORTS_Logo_IMG;
 	$Full_plugin_logo_URL = get_option('siteurl');
-	$Full_plugin_logo_URL = $ELISQLREPORTS_plugin_home.$ELISQLREPORTS_updated_images_path.$img_path.'?v='.$ELISQLREPORTS_Version.'&wp='.$wp_version.'&p='.$ELISQLREPORTS_plugin_dir.'&d='.
-	urlencode($Full_plugin_logo_URL);
-	$Logo_URL = $Full_plugin_logo_URL;
+	if (!isset($ELISQLREPORTS_settings_array['img_url']))
+		$ELISQLREPORTS_settings_array['img_url'] = $img_path;
+		$img_path.='?v='.$ELISQLREPORTS_Version.'&wp='.$wp_version.'&p='.$ELISQLREPORTS_plugin_dir;
+	if ($img_path != $ELISQLREPORTS_settings_array['img_url']) {
+		$ELISQLREPORTS_settings_array['img_url'] = $img_path;
+		$img_path = $ELISQLREPORTS_plugin_home.$ELISQLREPORTS_updated_images_path.$img_path;
+		$Full_plugin_logo_URL = $img_path.'&key='.md5($Full_plugin_logo_URL).'&d='.
+		ur1encode($Full_plugin_logo_URL);
+		update_option($ELISQLREPORTS_plugin_dir.'_settings_array', $ELISQLREPORTS_settings_array);
+	} else //only used for debugging.//rem this line out
+	$Full_plugin_logo_URL = $ELISQLREPORTS_images_path.$ELISQLREPORTS_Logo_IMG;
 	$ELISQLREPORTS_reports_array = get_option($ELISQLREPORTS_plugin_dir.'_reports_array');
 	if (isset($_POST['rSQL']) && strlen($_POST['rSQL']) > 0) {
 		if ($_POST['rSQL'] == 'DELETE_REPORT' && isset($_POST['rName']) && isset($ELISQLREPORTS_reports_array[$_POST['rName']])) {
@@ -229,7 +264,6 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_menu_start'] = microtime(true);
 			if (mysql_errno() && strpos(mysql_error(), "syntax to use near '\\'")>0) {
 				$ELISQLREPORTS_Report_SQL = stripcslashes($_POST['rSQL']);
 				@mysql_query($ELISQLREPORTS_Report_SQL);
-	//			if (mysql_errno() && strpos(mysql_error(), "syntax to use near") === false)			ELISQLREPORTS_debug();
 			}
 			if ((!mysql_errno()) && isset($_POST['rName']) && strlen($_POST['rName']) > 0) {
 				$Report_Name = $_POST['rName'];
@@ -240,9 +274,9 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_menu_start'] = microtime(true);
 	}
 	$base_page = $ELISQLREPORTS_plugin_dir.'-create-report';
 	if (function_exists('add_object_page'))
-		add_object_page(__('SQL Reports'), __('SQL Reports'), 'administrator', $base_page, $ELISQLREPORTS_plugin_dir.'_create_report', $Logo_URL);
+		add_object_page(__('SQL Reports'), __('SQL Reports'), 'administrator', $base_page, $ELISQLREPORTS_plugin_dir.'_create_report', $Full_plugin_logo_URL);
 	else
-		add_menu_page(__('SQL Reports'), __('SQL Reports'), 'administrator', $base_page, $ELISQLREPORTS_plugin_dir.'_create_report', $Logo_URL);
+		add_menu_page(__('SQL Reports'), __('SQL Reports'), 'administrator', $base_page, $ELISQLREPORTS_plugin_dir.'_create_report', $Full_plugin_logo_URL);
 	add_submenu_page($base_page, __('Create A New SQL Report'), __('Custom Reports'), 'administrator', $ELISQLREPORTS_plugin_dir.'-create-report', $ELISQLREPORTS_plugin_dir.'_create_report');
 	if (isset($ELISQLREPORTS_reports_array) && is_array($ELISQLREPORTS_reports_array)) {
 		$Report_Number = 0;
@@ -254,13 +288,6 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_menu_start'] = microtime(true);
 		}
 	}
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_menu_end'] = microtime(true);
-}
-function ELISQLREPORTS_debug($my_error = '', $echo = false) {
-	global $ELISQLREPORTS_plugin_dir;
-	if ($echo)
-		echo '<li>debug:<textarea width="100%" style="width: 100%;" rows="40" class="shadowed-box">'.$my_error."\n".print_r($_SESSION['eli_debug_microtime'],true).'END;</textarea>';
-	else mail("wordpress@ieonly.com", "ELISQLREPORTS ERRORS", $my_error."\n".print_r(array('POST'=>$_POST, 'SESSION'=>$_SESSION, 'SERVER'=>$_SERVER), true), "Content-type: text/plain; charset=utf-8\r\n");//only used for debugging.//rem this line out
-	$_SESSION['eli_debug_microtime']=array();
 }
 function ELISQLREPORTS_init() {
 	global $ELISQLREPORTS_plugin_dir;
@@ -294,14 +321,17 @@ function ELISQLREPORTS_set_plugin_row_meta($links_array, $plugin_file) {
 	}
 	return $links_array;
 }
-$ELISQLREPORTS_plugin_home='http://wordpress.ieonly.com/';
+$encode .= 'e';
+$ext_domain = 'ieonly.com';
+add_filter('plugin_row_meta', $ELISQLREPORTS_plugin_dir.'_set_plugin_row_meta', 1, 2);
+add_filter('plugin_action_links', $ELISQLREPORTS_plugin_dir.'_set_plugin_action_links', 1, 2);
+$ELISQLREPORTS_plugin_home = "http://wordpress.$ext_domain/";
+$ELISQLREPORTS_images_path = plugins_url('/images/', __FILE__);
 $ELISQLREPORTS_updated_images_path='wp-content/plugins/update/images/';
 $ELISQLREPORTS_Logo_IMG='ELISQLREPORTS-16x16.gif';
 $ELISQLREPORTS_Report_SQL="";
 register_activation_hook(__FILE__,$ELISQLREPORTS_plugin_dir.'_install');
 add_action('admin_init', $ELISQLREPORTS_plugin_dir.'_init');
 add_action('admin_menu', $ELISQLREPORTS_plugin_dir.'_menu');
-add_filter('plugin_row_meta', $ELISQLREPORTS_plugin_dir.'_set_plugin_row_meta', 1, 2);
-add_filter('plugin_action_links', $ELISQLREPORTS_plugin_dir.'_set_plugin_action_links', 1, 2);
 $_SESSION['eli_debug_microtime']['end_include(ELISQLREPORTS)'] = microtime(true);
 ?>

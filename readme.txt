@@ -4,12 +4,12 @@ Plugin URI: http://wordpress.ieonly.com/category/my-plugins/sql-reports/
 Author: Eli Scheetz
 Author URI: http://wordpress.ieonly.com/
 Contributors: scheeeli
-Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=8VWNB5QEJ55TJ
+Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7K3TSGPAENSGS
 Tags: plugin, admin, reports, sql, mysql, query, customize
-Stable tag: 1.1.12.16
-Version: 1.1.12.16
+Stable tag: 1.2.03.16
+Version: 1.2.03.16
 Requires at least: 2.6
-Tested up to: 3.3
+Tested up to: 3.3.1
 
 This plugin allows you to create reports simply by entering in the SQL.
 
@@ -17,7 +17,7 @@ This plugin allows you to create reports simply by entering in the SQL.
 
 Just place some SQL on in the box and save it as a report. You can save multiple reports and they will be listed on the Admin Menu so you can quickly run them again anytime with just one click.
 
-Plugin
+Updated Apr-1st
 
 == Installation ==
 
@@ -36,6 +36,9 @@ Start Creating and Saving Reports.
 
 == Changelog ==
 
+= 1.2.03.16 =
+* Added basic sort capability by linking column names.
+
 = 1.1.12.16 =
 * Added styled DIV around Reports with ID tag so that you can customize the style.
 
@@ -48,8 +51,11 @@ Start Creating and Saving Reports.
 
 == Upgrade Notice ==
 
+= 1.2.03.16 =
+Added basic sort capability by linking column names.
+
 = 1.1.12.16 =
-* Added styled DIV around Reports with ID tag so that you can customize the style.
+Added styled DIV around Reports with ID tag so that you can customize the style.
 
 = 1.1.12.15 =
 Fixed the aditional plugin links and made the Save button label dynamic.
