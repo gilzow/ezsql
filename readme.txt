@@ -6,8 +6,8 @@ Author URI: http://wordpress.ieonly.com/
 Contributors: scheeeli
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7K3TSGPAENSGS
 Tags: plugin, admin, reports, sql, mysql, query, customize
-Stable tag: 1.2.03.16
-Version: 1.2.03.16
+Stable tag: 1.2.04.06
+Version: 1.2.04.06
 Requires at least: 2.6
 Tested up to: 3.3.1
 
@@ -15,9 +15,9 @@ This plugin allows you to create reports simply by entering in the SQL.
 
 == Description ==
 
-Just place some SQL on in the box and save it as a report. You can save multiple reports and they will be listed on the Admin Menu so you can quickly run them again anytime with just one click.
+Just place some SQL on in the box and save it as a report. You can save multiple reports and they will be listed on the Admin Menu so you can quickly run them again anytime with just one click. You can also put a report on a Page or Post using a shortcode like [SQLREPORT name="My Report" style="padding: 6px;" /]
 
-Updated Apr-1st
+Updated Apr-5th
 
 == Installation ==
 
@@ -30,11 +30,18 @@ Updated Apr-1st
 
 Start Creating and Saving Reports.
 
+= How do I get one of my reports onto a Page or Post? =
+
+Just use the shortcode SQLREPORT like this [SQLREPORT name="My Report" style="border: 2px solid #CCCCCC; padding: 6px;" /] but be sure the name attribute matches the exact name of a report you have already created.
+
 == Screenshots ==
 
 1. This is a screen shot of the Admin Menu with some example reports.
 
 == Changelog ==
+
+= 1.2.04.06 =
+* Added shortcode support so you can put your reports onto Pages and Posts.
 
 = 1.2.03.16 =
 * Added basic sort capability by linking column names.
@@ -50,6 +57,9 @@ Start Creating and Saving Reports.
 * First version uploaded to WordPress.
 
 == Upgrade Notice ==
+
+= 1.2.04.06 =
+Added shortcode support so you can put your reports onto Pages and Posts.
 
 = 1.2.03.16 =
 Added basic sort capability by linking column names.

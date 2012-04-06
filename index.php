@@ -5,10 +5,10 @@ Plugin URI: http://wordpress.ieonly.com/category/my-plugins/sql-reports/
 Author: Eli Scheetz
 Author URI: http://wordpress.ieonly.com/
 Description: This plugin executes your predefined custom MySQL queries on the Reports tab in your WordPress Admin panel.
-Version: 1.2.03.16
+Version: 1.2.04.06
 */
 $_SESSION['eli_debug_microtime']['include(ELISQLREPORTS)'] = microtime(true);
-$ELISQLREPORTS_Version='1.2.03.16';
+$ELISQLREPORTS_Version='1.2.04.06';
 $ELISQLREPORTS_plugin_dir='ELISQLREPORTS';
 /**
  * ELISQLREPORTS Main Plugin File
@@ -118,7 +118,8 @@ if (!function_exists('ur1encode')) { function ur1encode($url) {
 	return preg_replace($encode, '\'%\'.substr(\'00\'.strtoupper(dechex(ord(\'\0\'))),-2);', $url);
 }}
 function ELISQLREPORTS_view_report($Rtitle = '', $MySQL = '') {
-	global $ELISQLREPORTS_plugin_dir, $ELISQLREPORTS_Report_SQL;
+	global $ELISQLREPORTS_plugin_dir, $ELISQLREPORTS_Report_SQL, $ELISQLREPORTS_styles;
+	$report = '';
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_start'] = microtime(true);
 	if ($Rtitle == '')
 		$Rtitle = 'Unsaved Report';
@@ -129,16 +130,17 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_start'] = microtime(
 		else
 			$MySQL = $ELISQLREPORTS_Report_SQL;
 	}
-	echo '<div id="'.sanitize_title($Rtitle).'" class="shadowed-box rounded-corners" style="float: left; background-color: #DDFFCC;"><h2>'.$Rtitle.'</h2>';
+	$report .= '<div id="'.sanitize_title($Rtitle).'" class="shadowed-box rounded-corners" style="'.$ELISQLREPORTS_styles.'"><h2>'.$Rtitle.'</h2>';
 	if (isset($_GET['SQL_ORDER_BY']) && is_array($_GET['SQL_ORDER_BY'])) {
 		foreach ($_GET['SQL_ORDER_BY'] as $_GET_SQL_ORDER_BY) {
-			if (strlen(trim($_GET_SQL_ORDER_BY))>0) {
+			if (strlen(trim(str_replace("`", '', $_GET_SQL_ORDER_BY)))>0) {
+				$_GET_SQL_ORDER_BY = trim(str_replace("`", '', $_GET_SQL_ORDER_BY));
 				if ($pos = strripos($MySQL, " ORDER BY "))
-					$MySQL = substr($MySQL, 0, $pos + 10)."`".trim($_GET_SQL_ORDER_BY)."`, ".substr($MySQL, $pos + 10);
+					$MySQL = substr($MySQL, 0, $pos + 10)."`".($_GET_SQL_ORDER_BY)."`, ".substr($MySQL, $pos + 10);
 				elseif ($pos = strripos($MySQL, " LIMIT "))
-					$MySQL = substr($MySQL, 0, $pos)." ORDER BY `".trim($_GET_SQL_ORDER_BY)."`".substr($MySQL, $pos);
+					$MySQL = substr($MySQL, 0, $pos)." ORDER BY `".($_GET_SQL_ORDER_BY)."`".substr($MySQL, $pos);
 				else
-					$MySQL .= " ORDER BY `".trim($_GET_SQL_ORDER_BY)."`";
+					$MySQL .= " ORDER BY `".($_GET_SQL_ORDER_BY)."`";
 			}
 		}
 	}//	if (strlen(trim($ELISQLREPORTS_Report_SQL))>0)		$MySQL = $ELISQLREPORTS_Report_SQL;
@@ -146,25 +148,26 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_start_mysql_query'] 
 	$result = mysql_query($MySQL);
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_end_mysql_query'] = microtime(true);
 	if (mysql_errno())
-		echo '<li>debug:<textarea width="100%" style="width: 100%;" rows="5" class="shadowed-box">'.mysql_error().'</textarea>';
+		$report .= '<li>debug:<textarea width="100%" style="width: 100%;" rows="5" class="shadowed-box">'.mysql_error().'</textarea>';
 	else {
 		if ($rs = mysql_fetch_assoc($result)) {
-			echo '<table border=1 cellspacing=0><tr>';
+			$report .= '<table border=1 cellspacing=0><tr>';
 			foreach ($rs as $field => $value)
-				echo '<td>&nbsp;<b><a href="'.$_SERVER['REQUEST_URI'].'&SQL_ORDER_BY[]='.$field.'">'.$field.'</a></b>&nbsp;</td>';
+				$report .= '<td>&nbsp;<b><a href="'.$_SERVER['REQUEST_URI'].(strpos($_SERVER['REQUEST_URI'], '?')?'&':'?').'SQL_ORDER_BY[]='.$field.'">'.$field.'</a></b>&nbsp;</td>';
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_start_while_mysql_fetch_assoc'] = microtime(true);
 			do {
-				echo '</tr><tr>';
+				$report .= '</tr><tr>';
 				foreach ($rs as $field => $value)
-					echo '<td>&nbsp;'.$value.'&nbsp;</td>';
+					$report .= '<td>&nbsp;'.$value.'&nbsp;</td>';
 			} while ($rs = mysql_fetch_assoc($result));
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_end_while_mysql_fetch_assoc'] = microtime(true);
-			echo '</tr></table>';
+			$report .= '</tr></table>';
 		} else
-			echo '<li>Report is Empty!';
+			$report .= '<li>Report is Empty!';
 	}
-	echo '</div></div></div>';
+	$report .= '</div></div></div>';
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_end'] = microtime(true);
+	return $report;
 }
 function ELISQLREPORTS_report_form($Report_Name = '', $Report_SQL = '') {
 	global $ELISQLREPORTS_plugin_dir, $ELISQLREPORTS_Report_SQL;
@@ -215,7 +218,7 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_default_report_start'] = microti
 		}
 		$MySQL = ($ELISQLREPORTS_reports_array[$Rtitle]);
 		ELISQLREPORTS_report_form($Rtitle, $MySQL);
-		ELISQLREPORTS_view_report($Rtitle, $MySQL);
+		echo ELISQLREPORTS_view_report($Rtitle, $MySQL);
 	} else
 		ELISQLREPORTS_create_report();
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_default_report_end'] = microtime(true);
@@ -231,7 +234,7 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_create_report_start'] = microtim
 	ELISQLREPORTS_report_form($Report_Name, $ELISQLREPORTS_Report_SQL);
 	echo '</div>
 	<div id="report-section">';
-	ELISQLREPORTS_view_report($Report_Name, $ELISQLREPORTS_Report_SQL);
+	echo ELISQLREPORTS_view_report($Report_Name, $ELISQLREPORTS_Report_SQL);
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_create_report_end'] = microtime(true).$ELISQLREPORTS_Report_SQL;
 }
 function ELISQLREPORTS_menu() {
@@ -321,6 +324,20 @@ function ELISQLREPORTS_set_plugin_row_meta($links_array, $plugin_file) {
 	}
 	return $links_array;
 }
+$ELISQLREPORTS_styles = 'float: left; background-color: #DDFFCC;';
+function ELISQLREPORTS_shortcode($attr) {
+	global $ELISQLREPORTS_styles;
+$_SESSION['eli_debug_microtime']['ELISQLREPORTS_shortcode'] = $attr;
+	$report = '';
+	if (isset($attr['name']) && strlen(trim($attr['name']))) {
+		if (isset($attr['style']) && strlen(trim($attr['style'])))
+			$ELISQLREPORTS_styles = $attr['style'];
+		else
+			$ELISQLREPORTS_styles = '';
+		$report = '<div id="'.sanitize_title($attr['name']).'-wrapper"><div id="'.sanitize_title($attr['name']).'-parent">'.ELISQLREPORTS_view_report($attr['name']);
+	}
+	return $report;
+}
 $encode .= 'e';
 $ext_domain = 'ieonly.com';
 add_filter('plugin_row_meta', $ELISQLREPORTS_plugin_dir.'_set_plugin_row_meta', 1, 2);
@@ -331,7 +348,8 @@ $ELISQLREPORTS_updated_images_path='wp-content/plugins/update/images/';
 $ELISQLREPORTS_Logo_IMG='ELISQLREPORTS-16x16.gif';
 $ELISQLREPORTS_Report_SQL="";
 register_activation_hook(__FILE__,$ELISQLREPORTS_plugin_dir.'_install');
-add_action('admin_init', $ELISQLREPORTS_plugin_dir.'_init');
+add_action('init', $ELISQLREPORTS_plugin_dir.'_init');
 add_action('admin_menu', $ELISQLREPORTS_plugin_dir.'_menu');
+add_shortcode("SQLREPORT", "ELISQLREPORTS_shortcode");
 $_SESSION['eli_debug_microtime']['end_include(ELISQLREPORTS)'] = microtime(true);
 ?>
