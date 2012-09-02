@@ -1,4 +1,4 @@
-=== <sup>ELI's</sup> Custom SQL Report Admin <sub>with shortcode</sub> ===
+== ELI's Custom SQL Report Admin with shortcode ==
 Plugin URI: http://wordpress.ieonly.com/category/my-plugins/sql-reports/
 Author: Eli Scheetz
 Author URI: http://wordpress.ieonly.com/
