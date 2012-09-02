@@ -83,12 +83,11 @@ function showhide(id) {
 			</td></tr><tr><td>
 				<ul class="sidebar-links">
 					<li>Included with this Plugin<ul class="sidebar-links">
+						<li style="float: right;"><a href="javascript:showhide(\'div_License\');">License File</a>
 						<li><a href="javascript:showhide(\'div_Readme\');">Readme File</a>
-						<li><a href="javascript:showhide(\'div_License\');">License File</a>
 					</ul></li>
-					<li>on <a target="_blank" href="http://wordpress.org/extend/plugins/profile/scheeeli">WordPress.org</a><ul class="sidebar-links">
+					<li style="float: right;">on <a target="_blank" href="http://wordpress.org/extend/plugins/profile/scheeeli">WordPress.org</a><ul class="sidebar-links">
 						<li><a target="_blank" href="http://wordpress.org/extend/plugins/'.strtolower($ELISQLREPORTS_plugin_dir).'/faq/">Plugin FAQs</a>
-						<li><a target="_blank" href="http://wordpress.org/extend/plugins/'.strtolower($ELISQLREPORTS_plugin_dir).'/stats/">Download Stats</a>
 						<li><a target="_blank" href="http://wordpress.org/tags/'.strtolower($ELISQLREPORTS_plugin_dir).'">Forum Posts</a>
 					</ul></li>
 					<li>on <a target="_blank" href="'.$ELISQLREPORTS_plugin_home.'category/my-plugins/">Eli\'s Blog</a><ul class="sidebar-links">
@@ -143,7 +142,7 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_start'] = microtime(
 					$MySQL .= " ORDER BY `".($_GET_SQL_ORDER_BY)."`";
 			}
 		}
-	}//	if (strlen(trim($ELISQLREPORTS_Report_SQL))>0)		$MySQL = $ELISQLREPORTS_Report_SQL;
+	}
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_start_mysql_query'] = microtime(true);
 	$result = mysql_query($MySQL);
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_end_mysql_query'] = microtime(true);
@@ -152,8 +151,12 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_end_mysql_query'] = 
 	else {
 		if ($rs = mysql_fetch_assoc($result)) {
 			$report .= '<table border=1 cellspacing=0><tr>';
-			foreach ($rs as $field => $value)
-				$report .= '<td>&nbsp;<b><a href="'.$_SERVER['REQUEST_URI'].(strpos($_SERVER['REQUEST_URI'], '?')?'&':'?').'SQL_ORDER_BY[]='.$field.'">'.$field.'</a></b>&nbsp;</td>';
+			foreach ($rs as $field => $value) {
+				if ($Rtitle == 'Unsaved Report')
+					$report .= '<td>&nbsp;<b><a href="javascript: document.SQLForm.submit();" onclick="document.SQLForm.action+=\'&SQL_ORDER_BY[]='.$field.'\'">'.$field.'</a></b>&nbsp;</td>';
+				else
+					$report .= '<td>&nbsp;<b>'.$field.'</b>&nbsp;</td>';
+			}
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_start_while_mysql_fetch_assoc'] = microtime(true);
 			do {
 				$report .= '</tr><tr>';
@@ -172,12 +175,18 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_end'] = microtime(tr
 function ELISQLREPORTS_report_form($Report_Name = '', $Report_SQL = '') {
 	global $ELISQLREPORTS_plugin_dir, $ELISQLREPORTS_Report_SQL;
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_report_form_start'] = microtime(true);
-	if (strlen($Report_Name) > 0)
-		echo '<input type="button" value="Edit Report" onclick="document.getElementById(\'SQLFormDiv\').style.display=\'block\';this.style.display=\'none\';"><div id="SQLFormDiv" style="display: none;"><form method="POST" name="SQLForm"><input type="submit" value="DELETE REPORT" onclick="if (confirm(\'Are you sure you want to DELETE This Report?\')) { document.SQLForm.action=\'admin.php?page=ELISQLREPORTS-create-report\'; document.SQLForm.rSQL.value=\'DELETE_REPORT\'; document.SQLForm.rName.value=\''.str_replace("\"", "&quot;", str_replace('\'', '\\\'', $Report_Name)).'\'; }"><br />';
-	else
-		echo '<div id="SQLFormDiv"><form method="POST" name="SQLForm">';
 	if (strlen(trim($ELISQLREPORTS_Report_SQL))>0)
 		$Report_SQL = $ELISQLREPORTS_Report_SQL;
+	$mysql_info = mysql_info();
+	$result = @mysql_query($Report_SQL);
+	$_SERVER_REQUEST_URI = str_replace('&amp;','&', htmlspecialchars( $_SERVER['REQUEST_URI'] , ENT_QUOTES ) );
+	if (strlen($Report_Name) > 0 && !(mysql_errno() && !strpos(mysql_error(), "syntax to use near '\\'")))
+		echo '<input type="button" style="display: block;" value="Edit Report" onclick="document.getElementById(\'SQLFormDiv\').style.display=\'block\';this.style.display=\'none\';"><div id="SQLFormDiv" style="display: none;"><form method="POST" name="SQLForm" id="SQLForm" action="'.$_SERVER_REQUEST_URI.'"><input type="submit" value="DELETE REPORT" onclick="if (confirm(\'Are you sure you want to DELETE This Report?\')) { document.SQLForm.action=\'admin.php?page=ELISQLREPORTS-create-report\'; document.SQLForm.rSQL.value=\'DELETE_REPORT\'; document.SQLForm.rName.value=\''.str_replace("\"", "&quot;", str_replace('\'', '\\\'', $Report_Name)).'\'; }"><br />';
+	else {
+		if (mysql_errno() && !strpos(mysql_error(), "syntax to use near '\\'"))
+			echo '<div class="error"><ul><li>ERROR: '.mysql_error().'</li></ul></div>';
+		echo '<div id="SQLFormDiv"><form action="'.$_SERVER_REQUEST_URI.'" id="SQLForm" method="POST" name="SQLForm">';
+	}
 	echo 'Type or Paste your SQL into this box and give your report a name<br />
 	<textarea width="100%" style="width: 100%;" rows="10" name="rSQL" class="shadowed-box" onchange="setButtonValue(\'Update Report\');">'.($Report_SQL).'</textarea><br /><br />Report Name: <input type="text" id="reportName" name="rName" value="'.($Report_Name).'" onchange="setButtonValue(\'Save Report\');" /> <input id="gobutton" type="submit" value="'.(strlen($Report_Name)>0?'Refresh Report':'Test SQL').'" class="button-primary" /></form></div>
 <script>
@@ -196,6 +205,14 @@ function setButtonValue(newval) {
 	document.getElementById(\'gobutton\').value = newval;
 }
 </script>';
+	if (!mysql_fetch_assoc($result) && !mysql_errno()) {
+		if (strtoupper(substr($Report_SQL, 0, 7)) == 'UPDATE ') {
+			echo '<div class="updated"><ul><li>'.$mysql_info.'</li></ul></div>';
+			$ELISQLREPORTS_Report_SQL = preg_replace('/UPDATE (.+) SET (.+) WHERE /i', 'SELECT * FROM \\1 WHERE ', $Report_SQL);
+			$Report_SQL = $ELISQLREPORTS_Report_SQL;
+		}
+	}
+	return $Report_SQL;
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_report_form_end'] = microtime(true);
 }
 function ELISQLREPORTS_default_report($Rtitle = '') {
@@ -217,7 +234,7 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_default_report_start'] = microti
 			$Rtitle = $Report_Names[count($Report_Names)-1];
 		}
 		$MySQL = ($ELISQLREPORTS_reports_array[$Rtitle]);
-		ELISQLREPORTS_report_form($Rtitle, $MySQL);
+		$MySQL = ELISQLREPORTS_report_form($Rtitle, $MySQL);
 		echo ELISQLREPORTS_view_report($Rtitle, $MySQL);
 	} else
 		ELISQLREPORTS_create_report();

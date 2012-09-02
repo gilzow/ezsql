@@ -1,15 +1,14 @@
-=== ELI's Custom SQL Reports Admin ===
-Plugin Name: ELI's Custom SQL Reports Admin
+=== <sup>ELI's</sup> Custom SQL Report Admin <sub>with shortcode</sub> ===
 Plugin URI: http://wordpress.ieonly.com/category/my-plugins/sql-reports/
 Author: Eli Scheetz
 Author URI: http://wordpress.ieonly.com/
 Contributors: scheeeli
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7K3TSGPAENSGS
-Tags: plugin, admin, reports, sql, mysql, query, customize
-Stable tag: 1.2.04.06
-Version: 1.2.04.06
+Tags: plugin, admin, reports, sql, mysql, query, custom, shortcode
+Stable tag: 1.2.09.02
+Version: 1.2.09.02
 Requires at least: 2.6
-Tested up to: 3.3.1
+Tested up to: 3.4.1
 
 This plugin allows you to create reports simply by entering in the SQL.
 
@@ -17,7 +16,7 @@ This plugin allows you to create reports simply by entering in the SQL.
 
 Just place some SQL on in the box and save it as a report. You can save multiple reports and they will be listed on the Admin Menu so you can quickly run them again anytime with just one click. You can also put a report on a Page or Post using a shortcode like [SQLREPORT name="My Report" style="padding: 6px;" /]
 
-Updated Apr-5th
+Updated Sept-2nd
 
 == Installation ==
 
@@ -40,6 +39,12 @@ Just use the shortcode SQLREPORT like this [SQLREPORT name="My Report" style="bo
 
 == Changelog ==
 
+= 1.1.09.02 =
+* Fixed auto sort links and removed them from showing on finished reports.
+
+= 1.2.04.16 =
+* Added error message to the Edit Report Page if SQL statement fails.
+
 = 1.2.04.06 =
 * Added shortcode support so you can put your reports onto Pages and Posts.
 
@@ -57,6 +62,9 @@ Just use the shortcode SQLREPORT like this [SQLREPORT name="My Report" style="bo
 * First version uploaded to WordPress.
 
 == Upgrade Notice ==
+
+= 1.1.09.02 =
+Fixed auto sort links and removed them from showing on finished reports.
 
 = 1.2.04.06 =
 Added shortcode support so you can put your reports onto Pages and Posts.
