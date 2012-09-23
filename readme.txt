@@ -5,10 +5,10 @@ Author URI: http://wordpress.ieonly.com/
 Contributors: scheeeli
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7K3TSGPAENSGS
 Tags: plugin, admin, reports, sql, mysql, query, custom, shortcode
-Stable tag: 1.2.09.02
-Version: 1.2.09.02
+Stable tag: 1.2.09.32
+Version: 1.2.09.23
 Requires at least: 2.6
-Tested up to: 3.4.1
+Tested up to: 3.4.2
 
 This plugin allows you to create reports simply by entering in the SQL.
 
@@ -39,7 +39,10 @@ Just use the shortcode SQLREPORT like this [SQLREPORT name="My Report" style="bo
 
 == Changelog ==
 
-= 1.1.09.02 =
+= 1.2.09.23 =
+* Added css classes to the Table and TRs for better style control.
+
+= 1.2.09.02 =
 * Fixed auto sort links and removed them from showing on finished reports.
 
 = 1.2.04.16 =
@@ -63,7 +66,10 @@ Just use the shortcode SQLREPORT like this [SQLREPORT name="My Report" style="bo
 
 == Upgrade Notice ==
 
-= 1.1.09.02 =
+= 1.2.09.23 =
+Added css classes to the Table and TRs for better style control.
+
+= 1.2.09.02 =
 Fixed auto sort links and removed them from showing on finished reports.
 
 = 1.2.04.06 =

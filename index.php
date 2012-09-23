@@ -5,10 +5,10 @@ Plugin URI: http://wordpress.ieonly.com/category/my-plugins/sql-reports/
 Author: Eli Scheetz
 Author URI: http://wordpress.ieonly.com/
 Description: This plugin executes your predefined custom MySQL queries on the Reports tab in your WordPress Admin panel.
-Version: 1.2.09.02
+Version: 1.2.09.23
 */
 $_SESSION['eli_debug_microtime']['include(ELISQLREPORTS)'] = microtime(true);
-$ELISQLREPORTS_Version='1.2.09.02';
+$ELISQLREPORTS_Version='1.2.09.23';
 $ELISQLREPORTS_plugin_dir='ELISQLREPORTS';
 /**
  * ELISQLREPORTS Main Plugin File
@@ -150,7 +150,7 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_end_mysql_query'] = 
 		$report .= '<li>debug:<textarea width="100%" style="width: 100%;" rows="5" class="shadowed-box">'.mysql_error().'</textarea>';
 	else {
 		if ($rs = mysql_fetch_assoc($result)) {
-			$report .= '<table border=1 cellspacing=0><tr>';
+			$report .= '<table border=1 cellspacing=0 class="ELISQLREPORTS-table"><tr class="ELISQLREPORTS-Header-Row">';
 			foreach ($rs as $field => $value) {
 				if ($Rtitle == 'Unsaved Report')
 					$report .= '<td>&nbsp;<b><a href="javascript: document.SQLForm.submit();" onclick="document.SQLForm.action+=\'&SQL_ORDER_BY[]='.$field.'\'">'.$field.'</a></b>&nbsp;</td>';
@@ -158,8 +158,11 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_end_mysql_query'] = 
 					$report .= '<td>&nbsp;<b>'.$field.'</b>&nbsp;</td>';
 			}
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_start_while_mysql_fetch_assoc'] = microtime(true);
+			$row=0;
+			$OddEven=array('Even','Odd');
 			do {
-				$report .= '</tr><tr>';
+				$row++;
+				$report .= '</tr><tr class="ELISQLREPORTS-Row-'.$row.' ELISQLREPORTS-'.($OddEven[$row%2]).'-Row">';
 				foreach ($rs as $field => $value)
 					$report .= '<td>&nbsp;'.$value.'&nbsp;</td>';
 			} while ($rs = mysql_fetch_assoc($result));
