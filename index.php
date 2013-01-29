@@ -5,16 +5,18 @@ Plugin URI: http://wordpress.ieonly.com/category/my-plugins/sql-reports/
 Author: Eli Scheetz
 Author URI: http://wordpress.ieonly.com/
 Description: This plugin executes your predefined custom MySQL queries on the Reports tab in your WordPress Admin panel.
-Version: 1.2.09.23
+Version: 1.3.01.28
 */
+$ELISQLREPORTS_Version='1.3.01.28';
+if (!isset($_SESSION)) session_start();
+if (__FILE__ == $_SERVER['SCRIPT_FILENAME']) die('You are not allowed to call this page directly.<p>You could try starting <a href="http://'.$_SERVER['SERVER_NAME'].'">here</a>.');
 $_SESSION['eli_debug_microtime']['include(ELISQLREPORTS)'] = microtime(true);
-$ELISQLREPORTS_Version='1.2.09.23';
 $ELISQLREPORTS_plugin_dir='ELISQLREPORTS';
 /**
  * ELISQLREPORTS Main Plugin File
  * @package ELISQLREPORTS
 */
-/*  Copyright 2011 Eli Scheetz (email: wordpress@ieonly.com)
+/*  Copyright 2011-2013 Eli Scheetz (email: wordpress@ieonly.com)
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -44,8 +46,8 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_display_header_start'] = microti
 	$wait_img_URL = plugins_url('/images/', __FILE__).'wait.gif';
 	echo '<style>
 .rounded-corners {margin: 10px; padding: 10px; -webkit-border-radius: 10px; -moz-border-radius: 10px; border: 1px solid #000000;}
-.shadowed-box {box-shadow: -3px 3px 3px #666666; -moz-box-shadow: -3px 3px 3px #666666; -webkit-box-shadow: -3px 3px 3px #666666;}
-.sidebar-box {background-color: #CCCCCC;}
+.shadowed-box {box-shadow: -3px 3px 3px #666; -moz-box-shadow: -3px 3px 3px #666; -webkit-box-shadow: -3px 3px 3px #666;}
+.sidebar-box {background-color: #CCC;}
 .sidebar-links {padding: 0 15px; list-style: none;}
 .shadowed-text {text-shadow: #0000FF -1px 1px 1px;}
 .sub-option {float: left; margin: 3px 5px;}
@@ -117,7 +119,7 @@ if (!function_exists('ur1encode')) { function ur1encode($url) {
 	return preg_replace($encode, '\'%\'.substr(\'00\'.strtoupper(dechex(ord(\'\0\'))),-2);', $url);
 }}
 function ELISQLREPORTS_view_report($Rtitle = '', $MySQL = '') {
-	global $ELISQLREPORTS_plugin_dir, $ELISQLREPORTS_Report_SQL, $ELISQLREPORTS_styles;
+	global $ELISQLREPORTS_plugin_dir, $ELISQLREPORTS_Report_SQL, $ELISQLREPORTS_styles, $current_user;
 	$report = '';
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_start'] = microtime(true);
 	if ($Rtitle == '')
@@ -144,7 +146,7 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_start'] = microtime(
 		}
 	}
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_start_mysql_query'] = microtime(true);
-	$result = mysql_query($MySQL);
+	$result = ELISQLREPORTS_eval($MySQL);
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_end_mysql_query'] = microtime(true);
 	if (mysql_errno())
 		$report .= '<li>debug:<textarea width="100%" style="width: 100%;" rows="5" class="shadowed-box">'.mysql_error().'</textarea>';
@@ -164,16 +166,22 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_start_while_mysql_fe
 				$row++;
 				$report .= '</tr><tr class="ELISQLREPORTS-Row-'.$row.' ELISQLREPORTS-'.($OddEven[$row%2]).'-Row">';
 				foreach ($rs as $field => $value)
-					$report .= '<td>&nbsp;'.$value.'&nbsp;</td>';
+					$report .= '<td>&nbsp;'.($value).'&nbsp;</td>';//is_array(maybe_unserialize($value))?print_r(maybe_unserialize($value),1):
 			} while ($rs = mysql_fetch_assoc($result));
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_end_while_mysql_fetch_assoc'] = microtime(true);
 			$report .= '</tr></table>';
 		} else
 			$report .= '<li>Report is Empty!';
 	}
-	$report .= '</div></div></div>';
+	$report .= '</div><br style="clear: left;"></div></div>';
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_end'] = microtime(true);
 	return $report;
+}
+function ELISQLREPORTS_eval($SQL) {
+	global $current_user;
+	if (@preg_match('/<\?php (.*?) \?>/', $SQL))
+		@preg_replace('/(.*)\<\?php (.*?) \?\>(.*)/sme', '$SQL = stripslashes("\\1").\\2.stripslashes("\\3");', $SQL);
+	return @mysql_query($SQL);
 }
 function ELISQLREPORTS_report_form($Report_Name = '', $Report_SQL = '') {
 	global $ELISQLREPORTS_plugin_dir, $ELISQLREPORTS_Report_SQL;
@@ -181,13 +189,13 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_report_form_start'] = microtime(
 	if (strlen(trim($ELISQLREPORTS_Report_SQL))>0)
 		$Report_SQL = $ELISQLREPORTS_Report_SQL;
 	$mysql_info = mysql_info();
-	$result = @mysql_query($Report_SQL);
+	$result = ELISQLREPORTS_eval($Report_SQL);
 	$_SERVER_REQUEST_URI = str_replace('&amp;','&', htmlspecialchars( $_SERVER['REQUEST_URI'] , ENT_QUOTES ) );
 	if (strlen($Report_Name) > 0 && !(mysql_errno() && !strpos(mysql_error(), "syntax to use near '\\'")))
 		echo '<input type="button" style="display: block;" value="Edit Report" onclick="document.getElementById(\'SQLFormDiv\').style.display=\'block\';this.style.display=\'none\';"><div id="SQLFormDiv" style="display: none;"><form method="POST" name="SQLForm" id="SQLForm" action="'.$_SERVER_REQUEST_URI.'"><input type="submit" value="DELETE REPORT" onclick="if (confirm(\'Are you sure you want to DELETE This Report?\')) { document.SQLForm.action=\'admin.php?page=ELISQLREPORTS-create-report\'; document.SQLForm.rSQL.value=\'DELETE_REPORT\'; document.SQLForm.rName.value=\''.str_replace("\"", "&quot;", str_replace('\'', '\\\'', $Report_Name)).'\'; }"><br />';
 	else {
 		if (mysql_errno() && !strpos(mysql_error(), "syntax to use near '\\'"))
-			echo '<div class="error"><ul><li>ERROR: '.mysql_error().'</li></ul></div>';
+			echo '<div class="error">ERROR: '.htmlspecialchars(mysql_error()).'</div>';
 		echo '<div id="SQLFormDiv"><form action="'.$_SERVER_REQUEST_URI.'" id="SQLForm" method="POST" name="SQLForm">';
 	}
 	echo 'Type or Paste your SQL into this box and give your report a name<br />
@@ -208,7 +216,7 @@ function setButtonValue(newval) {
 	document.getElementById(\'gobutton\').value = newval;
 }
 </script>';
-	if (!mysql_fetch_assoc($result) && !mysql_errno()) {
+	if (!mysql_errno() && !mysql_fetch_assoc($result)) {
 		if (strtoupper(substr($Report_SQL, 0, 7)) == 'UPDATE ') {
 			echo '<div class="updated"><ul><li>'.$mysql_info.'</li></ul></div>';
 			$ELISQLREPORTS_Report_SQL = preg_replace('/UPDATE (.+) SET (.+) WHERE /i', 'SELECT * FROM \\1 WHERE ', $Report_SQL);
@@ -282,12 +290,9 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_menu_start'] = microtime(true);
 			unset($_POST['rName']);
 			update_option($ELISQLREPORTS_plugin_dir.'_reports_array', $ELISQLREPORTS_reports_array);
 		} else {
-			$ELISQLREPORTS_Report_SQL = $_POST['rSQL'];
-			@mysql_query($ELISQLREPORTS_Report_SQL);
-			if (mysql_errno() && strpos(mysql_error(), "syntax to use near '\\'")>0) {
-				$ELISQLREPORTS_Report_SQL = stripcslashes($_POST['rSQL']);
-				@mysql_query($ELISQLREPORTS_Report_SQL);
-			}
+			$ELISQLREPORTS_Report_SQL = stripslashes($_POST['rSQL']);
+			ELISQLREPORTS_eval($ELISQLREPORTS_Report_SQL);
+//			if (mysql_errno() && strpos(mysql_error(), "syntax to use near '\\'")>0) {
 			if ((!mysql_errno()) && isset($_POST['rName']) && strlen($_POST['rName']) > 0) {
 				$Report_Name = $_POST['rName'];
 				$ELISQLREPORTS_reports_array[$Report_Name] = $ELISQLREPORTS_Report_SQL;
@@ -331,17 +336,13 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_init_start'] = microtime(true);
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_init_end'] = microtime(true);
 }
 function ELISQLREPORTS_set_plugin_action_links($links_array, $plugin_file) {
-	if ($plugin_file == substr(__file__, (-1 * strlen($plugin_file)))) {
-		$_SESSION['eli_debug_microtime']['ELISQLREPORTS_set_plugin_action_links'] = microtime(true);
+	if ($plugin_file == substr(__file__, (-1 * strlen($plugin_file))) && strlen($plugin_file) > 10)
 		$links_array = array_merge(array('<a href="admin.php?page=ELISQLREPORTS-create-report">'.__( 'Create a Report' ).'</a>'), $links_array);
-	}
 	return $links_array;
 }
 function ELISQLREPORTS_set_plugin_row_meta($links_array, $plugin_file) {
-	if ($plugin_file == substr(__file__, (-1 * strlen($plugin_file)))) {
-		$_SESSION['eli_debug_microtime']['ELISQLREPORTS_set_plugin_row_meta'] = microtime(true);
+	if ($plugin_file == substr(__file__, (-1 * strlen($plugin_file))) && strlen($plugin_file) > 10)
 		$links_array = array_merge($links_array, array('<a target="_blank" href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=8VWNB5QEJ55TJ">'.__( 'Donate' ).'</a>'));
-	}
 	return $links_array;
 }
 $ELISQLREPORTS_styles = 'float: left; background-color: #DDFFCC;';
