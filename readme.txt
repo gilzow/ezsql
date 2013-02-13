@@ -5,8 +5,8 @@ Author URI: http://wordpress.ieonly.com/category/my-plugins/
 Contributors: scheeeli
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7K3TSGPAENSGS
 Tags: plugin, admin, reports, sql, mysql, query, custom, shortcode
-Stable tag: 1.3.01.28
-Version: 1.3.01.28
+Stable tag: 1.3.02.12
+Version: 1.3.02.12
 Requires at least: 2.6
 Tested up to: 3.5.1
 
@@ -16,7 +16,7 @@ This plugin allows you to create reports simply by entering in the SQL.
 
 Just place some SQL on in the box and save it as a report. You can save multiple reports and they will be listed on the Admin Menu so you can quickly run them again anytime with just one click. You can also put a report on a Page or Post using a shortcode like [SQLREPORT name="My Report" style="padding: 6px;" /]
 
-Updated Sept-2nd
+Updated Feb-12th
 
 == Installation ==
 
@@ -33,11 +33,23 @@ Start Creating and Saving Reports.
 
 Just use the shortcode SQLREPORT like this [SQLREPORT name="My Report" style="border: 2px solid #CCCCCC; padding: 6px;" /] but be sure the name attribute matches the exact name of a report you have already created.
 
+= How do I use a global variable in one of my reports SQL? =
+
+SELECT display_name FROM wp_users WHERE ID = '<?php $current_user->ID ?>'
+(I know there are other ways to get the display name in WordPress, this is just a simple example to illustrate the proper syntax.)
+
+SELECT * FROM wp_users WHERE user_registered > '<?php $_GET[thedate] ?>'
+(note: this example assumes you are going to pass 'thedate' as a GET variable in the query string and, as this example shows, don't use quotes inside the PHP brackets.)
+
 == Screenshots ==
 
 1. This is a screen shot of the Admin Menu with some example reports.
 
 == Changelog ==
+
+= 1.3.02.12 =
+* Added Menu Placement and sorting options.
+* Expanded eval function to take multiple global variables.
 
 = 1.3.01.28 =
 * Added eval function to take PHP code in the SQL Statement.
@@ -68,6 +80,9 @@ Just use the shortcode SQLREPORT like this [SQLREPORT name="My Report" style="bo
 * First version uploaded to WordPress.
 
 == Upgrade Notice ==
+
+= 1.3.02.12 =
+Added Menu Placement and sorting options and expanded eval function to take multiple global variables.
 
 = 1.3.01.28 =
 Added eval function to take PHP code in the SQL Statement.

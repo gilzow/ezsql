@@ -5,9 +5,9 @@ Plugin URI: http://wordpress.ieonly.com/category/my-plugins/sql-reports/
 Author: Eli Scheetz
 Author URI: http://wordpress.ieonly.com/
 Description: This plugin executes your predefined custom MySQL queries on the Reports tab in your WordPress Admin panel.
-Version: 1.3.01.28
+Version: 1.3.02.12
 */
-$ELISQLREPORTS_Version='1.3.01.28';
+$ELISQLREPORTS_Version='1.3.02.12';
 if (!isset($_SESSION)) session_start();
 if (__FILE__ == $_SERVER['SCRIPT_FILENAME']) die('You are not allowed to call this page directly.<p>You could try starting <a href="http://'.$_SERVER['SERVER_NAME'].'">here</a>.');
 $_SESSION['eli_debug_microtime']['include(ELISQLREPORTS)'] = microtime(true);
@@ -40,22 +40,17 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_install_start'] = microtime(true
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_install_end'] = microtime(true);
 }
 $encode = '/[\?\-a-z\: \.\=\/A-Z\&\_]/';
-function ELISQLREPORTS_display_header($pTitle) {
-	global $ELISQLREPORTS_plugin_dir, $ELISQLREPORTS_plugin_home, $ELISQLREPORTS_Version, $ELISQLREPORTS_updated_images_path;
+function ELISQLREPORTS_display_header($pTitle, $optional_box = "") {
+	global $ELISQLREPORTS_images_path, $ELISQLREPORTS_plugin_dir, $ELISQLREPORTS_plugin_home, $ELISQLREPORTS_Version, $ELISQLREPORTS_updated_images_path;
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_display_header_start'] = microtime(true);
-	$wait_img_URL = plugins_url('/images/', __FILE__).'wait.gif';
+	$wait_img_URL = $ELISQLREPORTS_images_path.'wait.gif';
 	echo '<style>
-.rounded-corners {margin: 10px; padding: 10px; -webkit-border-radius: 10px; -moz-border-radius: 10px; border: 1px solid #000000;}
+.rounded-corners {margin: 10px; padding: 10px; border-radius: 10px; -webkit-border-radius: 10px; -moz-border-radius: 10px; border: 1px solid #000000;}
 .shadowed-box {box-shadow: -3px 3px 3px #666; -moz-box-shadow: -3px 3px 3px #666; -webkit-box-shadow: -3px 3px 3px #666;}
 .sidebar-box {background-color: #CCC;}
 .sidebar-links {padding: 0 15px; list-style: none;}
 .shadowed-text {text-shadow: #0000FF -1px 1px 1px;}
 .sub-option {float: left; margin: 3px 5px;}
-.pp_left {height: 28px; float: left; background-position: top center;}
-.pp_right {height: 18px; float: right; background-position: bottom center;}
-.pp_donate {margin: 3px 5px; background-repeat: no-repeat; background-image: url(\'https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif\');}
-.pp_left input {width: 100px; height: 28px;}
-.pp_right input {width: 130px; height: 18px;}
 #right-sidebar {float: right; margin-right: 10px; width: 290px;}
 #main-section {margin-right: 310px;}
 </style>
@@ -76,30 +71,26 @@ function showhide(id) {
 	</div>
 	<div id="pluginlinks" class="shadowed-box stuffbox"><h3 class="hndle"><span>Plugin Links</span></h3>
 		<div class="inside">
-		<form action="https://www.paypal.com/cgi-bin/webscr" method="post">
-			<table cellpadding=0 cellspacing=0><tr><td>
+			<form action="https://www.paypal.com/cgi-bin/webscr" method="post">
 				<input type="hidden" name="cmd" value="_s-xclick">
 				<input type="hidden" name="hosted_button_id" value="7K3TSGPAENSGS">
-				<div class="pp_donate pp_left"><input type="image" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif" border="0" name="submit" alt="Make a Donation with PayPal"></div>
-				<div class="pp_donate pp_right"><input type="image" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif" border="0" name="submitc" alt="Make a Donation with your credit card at PayPal"></div>
-			</td></tr><tr><td>
-				<ul class="sidebar-links">
-					<li>Included with this Plugin<ul class="sidebar-links">
-						<li style="float: right;"><a href="javascript:showhide(\'div_License\');">License File</a>
-						<li><a href="javascript:showhide(\'div_Readme\');">Readme File</a>
-					</ul></li>
-					<li style="float: right;">on <a target="_blank" href="http://wordpress.org/extend/plugins/profile/scheeeli">WordPress.org</a><ul class="sidebar-links">
-						<li><a target="_blank" href="http://wordpress.org/extend/plugins/'.strtolower($ELISQLREPORTS_plugin_dir).'/faq/">Plugin FAQs</a>
-						<li><a target="_blank" href="http://wordpress.org/tags/'.strtolower($ELISQLREPORTS_plugin_dir).'">Forum Posts</a>
-					</ul></li>
-					<li>on <a target="_blank" href="'.$ELISQLREPORTS_plugin_home.'category/my-plugins/">Eli\'s Blog</a><ul class="sidebar-links">
-						<li><a target="_blank" href="'.$ELISQLREPORTS_plugin_home.'category/my-plugins/sql-reports/">Plugin URI</a>
-					</ul></li>
-				</ul>
-			</td></tr></table>
-		</form>
+				<input type="image" id="pp_button" src="'.$ELISQLREPORTS_images_path.'btn_donateCC_WIDE.gif" border="0" name="submitc" alt="Make a Donation with PayPal">
+			</form>
+			<ul class="sidebar-links">
+				<li style="float: right;">on <a target="_blank" href="http://wordpress.org/extend/plugins/profile/scheeeli">WordPress.org</a><ul class="sidebar-links">
+					<li><a target="_blank" href="http://wordpress.org/support/view/plugin-reviews/'.strtolower($ELISQLREPORTS_plugin_dir).'">Plugin Reviews</a>
+					<li><a target="_blank" href="http://wordpress.org/extend/plugins/'.strtolower($ELISQLREPORTS_plugin_dir).'/faq/">Plugin FAQs</a>
+					<li><a target="_blank" href="http://wordpress.org/tags/'.strtolower($ELISQLREPORTS_plugin_dir).'">Forum Posts</a>
+				</ul></li>
+				<li><a href="javascript:showhide(\'div_Readme\');">Readme</a>
+				<li><a href="javascript:showhide(\'div_License\');">License</a>
+				<li>on <a target="_blank" href="'.$ELISQLREPORTS_plugin_home.'category/my-plugins/">Eli\'s Blog</a><ul class="sidebar-links">
+					<li><a target="_blank" href="'.$ELISQLREPORTS_plugin_home.'category/my-plugins/sql-reports/">Plugin URI</a>
+				</ul></li>
+			</ul>
 		</div>
 	</div>
+	'.$optional_box.'
 </div>
 <div id="admin-page-container">
 	<div id="main-section" class="metabox-holder">';
@@ -179,9 +170,18 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_end'] = microtime(tr
 }
 function ELISQLREPORTS_eval($SQL) {
 	global $current_user;
-	if (@preg_match('/<\?php (.*?) \?>/', $SQL))
-		@preg_replace('/(.*)\<\?php (.*?) \?\>(.*)/sme', '$SQL = stripslashes("\\1").\\2.stripslashes("\\3");', $SQL);
-	return @mysql_query($SQL);
+	$found = array();
+	if ($num = @preg_match_all('/<\?php (.+?) \?>/', $SQL, $found)) {
+		$repl = '$SQL = stripslashes("\\1")';
+		for ($n = 1; $n <= $num; $n++)
+			$repl .= '.mysql_real_escape_string(\\'.($n*2).').stripslashes("\\'.(($n*2)+1).'")';
+		preg_replace('/^(.*?)'.str_repeat('<\?php (.+?) \?>(.*?)', $num).'$/sme', $repl.';', $SQL);
+	}
+	$result = @mysql_query($SQL);
+	if (mysql_errno())
+		return ($SQL);
+	else
+		return $result;
 }
 function ELISQLREPORTS_report_form($Report_Name = '', $Report_SQL = '') {
 	global $ELISQLREPORTS_plugin_dir, $ELISQLREPORTS_Report_SQL;
@@ -195,11 +195,11 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_report_form_start'] = microtime(
 		echo '<input type="button" style="display: block;" value="Edit Report" onclick="document.getElementById(\'SQLFormDiv\').style.display=\'block\';this.style.display=\'none\';"><div id="SQLFormDiv" style="display: none;"><form method="POST" name="SQLForm" id="SQLForm" action="'.$_SERVER_REQUEST_URI.'"><input type="submit" value="DELETE REPORT" onclick="if (confirm(\'Are you sure you want to DELETE This Report?\')) { document.SQLForm.action=\'admin.php?page=ELISQLREPORTS-create-report\'; document.SQLForm.rSQL.value=\'DELETE_REPORT\'; document.SQLForm.rName.value=\''.str_replace("\"", "&quot;", str_replace('\'', '\\\'', $Report_Name)).'\'; }"><br />';
 	else {
 		if (mysql_errno() && !strpos(mysql_error(), "syntax to use near '\\'"))
-			echo '<div class="error">ERROR: '.htmlspecialchars(mysql_error()).'</div>';
+			echo '<div class="error">ERROR: '.htmlspecialchars(mysql_error()." SQL:$result").'</div>';
 		echo '<div id="SQLFormDiv"><form action="'.$_SERVER_REQUEST_URI.'" id="SQLForm" method="POST" name="SQLForm">';
 	}
 	echo 'Type or Paste your SQL into this box and give your report a name<br />
-	<textarea width="100%" style="width: 100%;" rows="10" name="rSQL" class="shadowed-box" onchange="setButtonValue(\'Update Report\');">'.($Report_SQL).'</textarea><br /><br />Report Name: <input type="text" id="reportName" name="rName" value="'.($Report_Name).'" onchange="setButtonValue(\'Save Report\');" /> <input id="gobutton" type="submit" value="'.(strlen($Report_Name)>0?'Refresh Report':'Test SQL').'" class="button-primary" /></form></div>
+	<textarea width="100%" style="width: 100%;" rows="10" name="rSQL" class="shadowed-box" onchange="setButtonValue(\'Update Report\');">'.($Report_SQL).'</textarea><br /><br />Report Name: <input type="text" id="reportName" name="rName" value="'.($Report_Name).'" onchange="setButtonValue(\'Save Report\');" /> <input id="gobutton" type="submit" class="button-primary" value="'.(strlen($Report_Name)>0?'Refresh Report" /> &nbsp; Shortcode: [SQLREPORT name="'.$Report_Name.'"]':'Test SQL" />').'</form></div>
 <script>
 var oldName="'.($Report_Name).'";
 function setButtonValue(newval) {
@@ -252,25 +252,48 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_default_report_start'] = microti
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_default_report_end'] = microtime(true);
 }
 function ELISQLREPORTS_create_report() {
-	global $ELISQLREPORTS_plugin_dir, $ELISQLREPORTS_Report_SQL;
+	global $ELISQLREPORTS_plugin_dir, $ELISQLREPORTS_Report_SQL, $ELISQLREPORTS_settings_array, $ELISQLREPORTS_saved_reports;
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_create_report_start'] = microtime(true);
-	ELISQLREPORTS_display_header('Creation');
+	$menu_opts = '<div class="stuffbox shadowed-box">
+	<h3 class="hndle"><span>Menu Item Placement Options</span></h3>
+	<div class="inside"><form method="POST" name="ELISQLREPORTS_menu_Form">Place <b>SQL Reports</b>:<br />';
+	foreach (array("below <b>Comments</b> and<br />&nbsp;above <b>Appearance</b>","below <b>Settings</b>") as $mg => $menu_group)
+		$menu_opts .= '<div style="padding: 4px 24px;" id="menu_group_div_'.$mg.'"><input type="radio" name="ELISQLREPORTS_menu_group" value="'.$mg.'"'.($ELISQLREPORTS_settings_array["menu_group"]==$mg||$mg==0?' checked':'').' onchange="document.ELISQLREPORTS_menu_Form.submit();" />'.$menu_group.'</div>';
+	$menu_opts .= 'Sort <b>Saved Reports</b> by:<br />';
+	$sort_order = array("Date Created","Alphabetical");
+	foreach ($sort_order as $mg => $menu_sort)
+		$menu_opts .= '<div style="padding: 4px 24px;" id="menu_sort_div_'.$mg.'"><input type="radio" name="ELISQLREPORTS_menu_sort" value="'.$mg.'"'.($ELISQLREPORTS_settings_array["menu_sort"]==$mg||$mg==0?' checked':'').' onchange="document.ELISQLREPORTS_menu_Form.submit();" />'.$menu_sort.'</div>';
+	$menu_opts .= '</form></div></div>';
+	if (strlen(trim($ELISQLREPORTS_saved_reports)))
+		$menu_opts .= '<div class="stuffbox shadowed-box">
+	<h3 class="hndle"><span>Saved Reports</span></h3>
+	<div class="inside" style="margin-left: 10px;">'.$ELISQLREPORTS_saved_reports.'</div></div>';
+	ELISQLREPORTS_display_header('Creation', $menu_opts);
 	$ELISQLREPORTS_reports_array = get_option($ELISQLREPORTS_plugin_dir.'_reports_array');
 	$Report_Name = '';
 	if (strlen(trim($ELISQLREPORTS_Report_SQL))==0)
 		$ELISQLREPORTS_Report_SQL="SELECT CONCAT('<a href=\"javascript:document.SQLForm.rSQL.value=\'SELECT * FROM ',table_name,'\';document.SQLForm.submit();\">',table_name,'</a>') as `Table List` FROM INFORMATION_SCHEMA.TABLES WHERE table_schema = '".DB_NAME."'";
+	echo '<div style="padding: 10px;">';
 	ELISQLREPORTS_report_form($Report_Name, $ELISQLREPORTS_Report_SQL);
 	echo '</div>
 	<div id="report-section">';
-	echo ELISQLREPORTS_view_report($Report_Name, $ELISQLREPORTS_Report_SQL);
+	echo ELISQLREPORTS_view_report($Report_Name, $ELISQLREPORTS_Report_SQL).'</div>';
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_create_report_end'] = microtime(true).$ELISQLREPORTS_Report_SQL;
 }
 function ELISQLREPORTS_menu() {
-	global $ELISQLREPORTS_images_path, $ELISQLREPORTS_plugin_dir, $wp_version, $ELISQLREPORTS_Version, $ELISQLREPORTS_plugin_home, $ELISQLREPORTS_Logo_IMG, $ELISQLREPORTS_updated_images_path, $ELISQLREPORTS_Report_SQL;
+	global $ELISQLREPORTS_images_path, $ELISQLREPORTS_plugin_dir, $wp_version, $ELISQLREPORTS_Version, $ELISQLREPORTS_plugin_home, $ELISQLREPORTS_Logo_IMG, $ELISQLREPORTS_updated_images_path, $ELISQLREPORTS_Report_SQL, $ELISQLREPORTS_saved_reports, $ELISQLREPORTS_settings_array;
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_menu_start'] = microtime(true);
 	$ELISQLREPORTS_settings_array = get_option($ELISQLREPORTS_plugin_dir.'_settings_array');
 	$img_path = basename(__FILE__);
 	$Full_plugin_logo_URL = get_option('siteurl');
+	if (isset($_POST["ELISQLREPORTS_menu_group"]) && is_numeric($_POST["ELISQLREPORTS_menu_group"]) && isset($_POST["ELISQLREPORTS_menu_sort"]) && is_numeric($_POST["ELISQLREPORTS_menu_sort"]) && ($_POST["ELISQLREPORTS_menu_group"] != $ELISQLREPORTS_settings_array["menu_group"] || $_POST["ELISQLREPORTS_menu_sort"] != $ELISQLREPORTS_settings_array["menu_sort"])) {
+		$ELISQLREPORTS_settings_array["menu_group"] = $_POST["ELISQLREPORTS_menu_group"];
+		$ELISQLREPORTS_settings_array["menu_sort"] = $_POST["ELISQLREPORTS_menu_sort"];
+	} elseif (!(isset($ELISQLREPORTS_settings_array["menu_group"])&&is_numeric($ELISQLREPORTS_settings_array["menu_group"])))
+		$ELISQLREPORTS_settings_array["menu_group"] = 0;
+	elseif (!(isset($ELISQLREPORTS_settings_array["menu_sort"])&&is_numeric($ELISQLREPORTS_settings_array["menu_sort"])))
+		$ELISQLREPORTS_settings_array["menu_sort"] = 0;
+	if ($ELISQLREPORTS_settings_array["menu_group"] == 2)
 	if (!isset($ELISQLREPORTS_settings_array['img_url']))
 		$ELISQLREPORTS_settings_array['img_url'] = $img_path;
 		$img_path.='?v='.$ELISQLREPORTS_Version.'&wp='.$wp_version.'&p='.$ELISQLREPORTS_plugin_dir;
@@ -279,9 +302,9 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_menu_start'] = microtime(true);
 		$img_path = $ELISQLREPORTS_plugin_home.$ELISQLREPORTS_updated_images_path.$img_path;
 		$Full_plugin_logo_URL = $img_path.'&key='.md5($Full_plugin_logo_URL).'&d='.
 		ur1encode($Full_plugin_logo_URL);
-		update_option($ELISQLREPORTS_plugin_dir.'_settings_array', $ELISQLREPORTS_settings_array);
 	} else //only used for debugging.//rem this line out
 	$Full_plugin_logo_URL = $ELISQLREPORTS_images_path.$ELISQLREPORTS_Logo_IMG;
+	update_option($ELISQLREPORTS_plugin_dir.'_settings_array', $ELISQLREPORTS_settings_array);
 	$ELISQLREPORTS_reports_array = get_option($ELISQLREPORTS_plugin_dir.'_reports_array');
 	if (isset($_POST['rSQL']) && strlen($_POST['rSQL']) > 0) {
 		if ($_POST['rSQL'] == 'DELETE_REPORT' && isset($_POST['rName']) && isset($ELISQLREPORTS_reports_array[$_POST['rName']])) {
@@ -301,29 +324,36 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_menu_start'] = microtime(true);
 		}
 	}
 	$base_page = $ELISQLREPORTS_plugin_dir.'-create-report';
-	if (function_exists('add_object_page'))
-		add_object_page(__('SQL Reports'), __('SQL Reports'), 'administrator', $base_page, $ELISQLREPORTS_plugin_dir.'_create_report', $Full_plugin_logo_URL);
-	else
+	if (!function_exists("add_object_page") || $ELISQLREPORTS_settings_array["menu_group"] == 1)
 		add_menu_page(__('SQL Reports'), __('SQL Reports'), 'administrator', $base_page, $ELISQLREPORTS_plugin_dir.'_create_report', $Full_plugin_logo_URL);
+	else
+		add_object_page(__('SQL Reports'), __('SQL Reports'), 'administrator', $base_page, $ELISQLREPORTS_plugin_dir.'_create_report', $Full_plugin_logo_URL);
 	add_submenu_page($base_page, __('Create A New SQL Report'), __('Custom Reports'), 'administrator', $ELISQLREPORTS_plugin_dir.'-create-report', $ELISQLREPORTS_plugin_dir.'_create_report');
+	$ELISQLREPORTS_saved_reports = '';
 	if (isset($ELISQLREPORTS_reports_array) && is_array($ELISQLREPORTS_reports_array)) {
 		$Report_Number = 0;
+		if ($ELISQLREPORTS_settings_array["menu_sort"])
+			ksort($ELISQLREPORTS_reports_array);
 		foreach ($ELISQLREPORTS_reports_array as $Rname => $Rquery) {
 			$Report_Number++;
 			$Rslug = $ELISQLREPORTS_plugin_dir.'-'.sanitize_title(str_replace(' ', '-', $Rname).'-'.$Report_Number);
 			$Rfunc = str_replace('-', '_', $Rslug);
 			add_submenu_page($base_page, __($Rname), __($Rname), 'administrator', $Rslug, $Rfunc);
+			$ELISQLREPORTS_saved_reports .= "<li><a href=\"?page=$Rslug\">$Rname</a>\n";
 		}
 	}
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_menu_end'] = microtime(true);
 }
 function ELISQLREPORTS_init() {
-	global $ELISQLREPORTS_plugin_dir;
+	global $ELISQLREPORTS_plugin_dir, $ELISQLREPORTS_settings_array;
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_init_start'] = microtime(true);
+	$ELISQLREPORTS_settings_array = get_option($ELISQLREPORTS_plugin_dir.'_settings_array');
 	$ELISQLREPORTS_reports_array = get_option($ELISQLREPORTS_plugin_dir.'_reports_array');
 	$_SESSION[$ELISQLREPORTS_plugin_dir.'HTTP_HOST'] = (isset($_SERVER['HTTP_HOST'])?$_SERVER['HTTP_HOST']:(isset($_SERVER['SERVER_NAME'])?$_SERVER['SERVER_NAME']:"Your Domain"));
-	$Report_Number = 0;
 	if (isset($ELISQLREPORTS_reports_array) && is_array($ELISQLREPORTS_reports_array)) {
+		$Report_Number = 0;
+		if ($ELISQLREPORTS_settings_array["menu_sort"])
+			ksort($ELISQLREPORTS_reports_array);
 		foreach ($ELISQLREPORTS_reports_array AS $Rname => $Rquery) {
 			$Report_Number++;
 			$Rslug = $ELISQLREPORTS_plugin_dir.'-'.sanitize_title(str_replace(' ', '-', $Rname).'-'.$Report_Number);
