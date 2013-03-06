@@ -4,9 +4,9 @@ Author: Eli Scheetz
 Author URI: http://wordpress.ieonly.com/category/my-plugins/
 Contributors: scheeeli
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7K3TSGPAENSGS
-Tags: plugin, admin, reports, sql, mysql, query, custom, shortcode
-Stable tag: 1.3.02.12
-Version: 1.3.02.12
+Tags: plugin, admin, reports, sql, mysql, database, backup, query, custom, shortcode
+Stable tag: 1.3.03.02
+Version: 1.3.03.02
 Requires at least: 2.6
 Tested up to: 3.5.1
 
@@ -16,7 +16,7 @@ This plugin allows you to create reports simply by entering in the SQL.
 
 Just place some SQL on in the box and save it as a report. You can save multiple reports and they will be listed on the Admin Menu so you can quickly run them again anytime with just one click. You can also put a report on a Page or Post using a shortcode like [SQLREPORT name="My Report" style="padding: 6px;" /]
 
-Updated Feb-12th
+Updated March-5th
 
 == Installation ==
 
@@ -46,6 +46,10 @@ SELECT * FROM wp_users WHERE user_registered > '<?php $_GET[thedate] ?>'
 1. This is a screen shot of the Admin Menu with some example reports.
 
 == Changelog ==
+
+= 1.3.03.02 =
+* Added database backup feature.
+* Fixed Report name issue when using apostrophes.
 
 = 1.3.02.12 =
 * Added Menu Placement and sorting options.
@@ -80,6 +84,9 @@ SELECT * FROM wp_users WHERE user_registered > '<?php $_GET[thedate] ?>'
 * First version uploaded to WordPress.
 
 == Upgrade Notice ==
+
+= 1.3.03.02 =
+Added database backup feature and fixed Report name issue when using apostrophes.
 
 = 1.3.02.12 =
 Added Menu Placement and sorting options and expanded eval function to take multiple global variables.
