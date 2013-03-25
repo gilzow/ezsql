@@ -5,9 +5,9 @@ Plugin URI: http://wordpress.ieonly.com/category/my-plugins/sql-reports/
 Author: Eli Scheetz
 Author URI: http://wordpress.ieonly.com/category/my-plugins/
 Description: Create and save custom SQL queries, run them from the Reports tab in your Admin menu or place them on pages and posts using the shortcode.
-Version: 1.3.03.02
+Version: 1.3.03.24
 */
-$ELISQLREPORTS_Version='1.3.03.02';
+$ELISQLREPORTS_Version='1.3.03.24';
 if (__FILE__ == $_SERVER['SCRIPT_FILENAME']) die('You are not allowed to call this page directly.<p>You could try starting <a href="http://'.$_SERVER['SERVER_NAME'].'">here</a>.');
 if (!session_id()) session_start();
 $_SESSION['eli_debug_microtime']['include(ELISQLREPORTS)'] = microtime(true);
@@ -153,27 +153,29 @@ function ELISQLREPORTS_make_Backup($db_date, $db_name = DB_NAME, $db_host = DB_H
 			$backup_sql .= ELISQLREPORTS_get_data($row[0]);
 		}
 		mysql_free_result($result);
-		$sql = "show tables where Table_Type = 'VIEW'";
-		$result = mysql_query($sql);
-		while ($row = mysql_fetch_row($result))
-			$backup_sql .= ELISQLREPORTS_get_structure($row[0]);
+		$sql = "show full tables where Table_Type = 'VIEW'";
+		if ($result = mysql_query($sql)) {
+			while ($row = mysql_fetch_row($result))
+				$backup_sql .= ELISQLREPORTS_get_structure($row[0], "View");
+			mysql_free_result($result);
+		}
 	}
-	mysql_free_result($result);
 	$backup_file = trailingslashit($_SESSION['ELISQLREPORTS_Backupdir'])."$db_name.$db_host.$db_date.sql";
 	if (file_put_contents($backup_file, $backup_sql))
 		echo "Saved $backup_file";
 	else
 		echo "Failed to save backup!";
 }
-function ELISQLREPORTS_get_structure($table) {
+function ELISQLREPORTS_get_structure($table, $type='Table') {
 	$return = "/* Table structure for `$table` */\n\n";
-	
+	$sql = "SHOW CREATE $type `$table`; ";
+	if ($result = mysql_query($sql)) {
 		$return .= "DROP TABLE IF EXISTS `$table`;\n\n";
-	$sql = "SHOW CREATE TABLE `$table`; ";
-	if ($result = mysql_query($sql))
 		if ($row = mysql_fetch_assoc($result))
-			$return .= $row['Create Table'] . ";\n\n";
-	mysql_free_result($result);
+			$return .= preg_replace('/CREATE .+? VIEW/', 'CREATE VIEW', $row["Create $type"]).";\n\n";
+		mysql_free_result($result);
+	} else
+		$return .= "/* requires the SHOW VIEW privilege and the SELECT privilege */\n\n";
 	return $return;
 }
 function ELISQLREPORTS_get_data($table) {
