@@ -10,7 +10,7 @@ Version: 3.06.14
 Requires at least: 2.6
 Tested up to: 3.5.1
 
-Create and save SQL queries, run them from the Reports tab in your Admin or place them on pages and posts using the shortcode. Keep your database safe with automatic hourly and daily backups.
+Create and save SQL Reports in your WP Admin and place them on pages and posts with a shortcode. Keep your database safe with automatic backups.
 
 == Description ==
 
@@ -38,13 +38,13 @@ Start Creating and Saving Reports.
 
 Just use the shortcode SQLREPORT like this [SQLREPORT name="My Report" style="border: 2px solid #CCCCCC; padding: 6px;" /] but be sure the name attribute matches the exact name of a report you have already created.
 
-= How do I use a global variable in one of my reports SQL? =
+= How do I use a global variable in one of my SQL queries? =
 
-Try the queries in these textarea boxes as an example:
-<textarea>SELECT display_name FROM wp_users WHERE ID = '<?php $current_user->ID ?>'</textarea>
+Note: This < does not display properly on web pages so I used the HTML code &lt; in this example, > works...
+SELECT display_name FROM wp_users WHERE ID = '&lt;?php $current_user->ID ?>'</textarea>
 (I know there are other ways to get the display name in WordPress, this is just a simple example to illustrate the proper syntax.)
 
-<textarea>SELECT * FROM wp_users WHERE user_registered > '<?php $_GET[thedate] ?>'</textarea>
+<textarea>SELECT * FROM wp_users WHERE user_registered > '&lt;?php $_GET[thedate] ?>'</textarea>
 (note: this example assumes you are going to pass 'thedate' as a GET variable in the query string and, as this example shows, don't use quotes inside the PHP brackets.)
 
 == Screenshots ==
