@@ -1,13 +1,13 @@
 <?php
 /*
-Plugin Name: ELI's Custom SQL Reports Admin
+Plugin Name: ELI's SQL Admin Reports Shortcode and DB Backup
 Plugin URI: http://wordpress.ieonly.com/category/my-plugins/sql-reports/
 Author: Eli Scheetz
 Author URI: http://wordpress.ieonly.com/category/my-plugins/
-Description: Create and save custom SQL queries, run them from the Reports tab in your Admin menu or place them on pages and posts using the shortcode.
-Version: 1.3.03.24
+Description: Create and save SQL queries, run them from the Reports tab in your Admin or place them on pages and posts using the shortcode. And keep your database safe with scheduled backups.
+Version: 3.06.14
 */
-$ELISQLREPORTS_Version='1.3.03.24';
+$ELISQLREPORTS_Version='3.06.14';
 if (__FILE__ == $_SERVER['SCRIPT_FILENAME']) die('You are not allowed to call this page directly.<p>You could try starting <a href="http://'.$_SERVER['SERVER_NAME'].'">here</a>.');
 if (!session_id()) session_start();
 $_SESSION['eli_debug_microtime']['include(ELISQLREPORTS)'] = microtime(true);
@@ -41,8 +41,7 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_install_end'] = microtime(true);
 }
 $encode = '/[\?\-a-z\: \.\=\/A-Z\&\_]/';
 function ELISQLREPORTS_display_header($pTitle, $optional_box = "") {
-	global $ELISQLREPORTS_images_path, $ELISQLREPORTS_plugin_dir, $ELISQLREPORTS_plugin_home, $ELISQLREPORTS_Version, $ELISQLREPORTS_updated_images_path;
-$_SESSION['eli_debug_microtime']['ELISQLREPORTS_display_header_start'] = microtime(true);
+	global $ELISQLREPORTS_images_path, $ELISQLREPORTS_plugin_dir, $ELISQLREPORTS_plugin_home, $ELISQLREPORTS_Version, $ELISQLREPORTS_updated_images_path, $ELISQLREPORTS_saved_reports;
 	$wait_img_URL = $ELISQLREPORTS_images_path.'wait.gif';
 	echo '<style>
 .rounded-corners {margin: 10px; padding: 10px; border-radius: 10px; -webkit-border-radius: 10px; -moz-border-radius: 10px; border: 1px solid #000000;}
@@ -52,7 +51,7 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_display_header_start'] = microti
 .shadowed-text {text-shadow: #0000FF -1px 1px 1px;}
 .sub-option {float: left; margin: 3px 5px;}
 #right-sidebar {float: right; margin-right: 10px; width: 290px;}
-#main-section {margin-right: 310px;}
+#main-section {margin-right: 320px;}
 </style>
 <script>
 function showhide(id) {
@@ -89,26 +88,18 @@ function showhide(id) {
 				</ul></li>
 			</ul>
 		</div>
-	</div>
-	'.$optional_box.'
+	</div>';
+	if (strlen(trim($ELISQLREPORTS_saved_reports)))
+		echo '<div class="stuffbox shadowed-box"><h3 class="hndle"><span>Saved Reports</span></h3><div class="inside" style="margin-left: 10px;">'.$ELISQLREPORTS_saved_reports.'</div></div>';
+	echo $optional_box.'
 </div>
 <div id="admin-page-container">
-	<div id="main-section" class="metabox-holder">	
-	<div id="backuprestore" class="alignright shadowed-box stuffbox"><h3 class="hndle"><span>Backup/Restore Database</span></h3>
-		<div class="inside" style="margin: 0 10px;">
-	'.ELISQLREPORTS_display_Backups().'
-			<div id="makebackup">
-			</div>
-			<form method=post><input name="db_date" type=hidden value="Y-m-d-H-i-s"><input type=submit value="Make a Backup Now" /></form>
-			<p>Restore feature comming soon...</p>
-		</div>
-	</div>';
+	<div id="main-section" class="metabox-holder">';
 	ELISQLREPORTS_display_File('Readme');
 	ELISQLREPORTS_display_File('License');
-$_SESSION['eli_debug_microtime']['ELISQLREPORTS_display_header_end'] = microtime(true);
 }
 function ELISQLREPORTS_set_backupdir() {
-	if (!isset($_SESSION['ELISQLREPORTS_Backupdir'])) {
+	if (!(isset($_SESSION['ELISQLREPORTS_Backupdir']) && is_dir($_SESSION['ELISQLREPORTS_Backupdir']))) {
 		$upload = wp_upload_dir();
 		$err403 = '<html><head><title>403 Forbidden</title></head><body><h1>Forbidden</h1><p>You don\'t have permission to access this directory.</p></body></html>';
 		$_SESSION['ELISQLREPORTS_Backupdir'] = trailingslashit($upload['basedir']).'SQL_Backups';
@@ -122,82 +113,135 @@ function ELISQLREPORTS_set_backupdir() {
 			@file_put_contents(trailingslashit($_SESSION['ELISQLREPORTS_Backupdir']).'index.php', $err403);
 	}
 }
-function ELISQLREPORTS_display_Backups() {
+$ELISQLREPORTS_backup_file = false;
+function ELISQLREPORTS_make_Backup($date_format, $backup_type = "manual", $db_name = DB_NAME, $db_host = DB_HOST) {
+	global $ELISQLREPORTS_settings_array, $ELISQLREPORTS_plugin_dir, $ELISQLREPORTS_backup_file;
+	$ELISQLREPORTS_settings_array = get_option($ELISQLREPORTS_plugin_dir.'_settings_array', array());
 	ELISQLREPORTS_set_backupdir();
-	if (isset($_POST['db_date']) && strlen($_POST['db_date']))
-		ELISQLREPORTS_make_Backup(date($_POST['db_date']));
-	if ($handle = opendir($_SESSION['ELISQLREPORTS_Backupdir'])) {
-		$files = '';
-		while (false !== ($entry = readdir($handle)))
-			if (is_file(trailingslashit($_SESSION['ELISQLREPORTS_Backupdir']).$entry) && strtolower(substr($entry, -4)) == ".sql")
-				$files .= "\n<li>$entry</li>";
-		closedir($handle);
-		if ($files)
-			$files = "<b>Current Backups:</b>".$files;
-		else
-			$files = "<b>No Backups Made</b>";
-	} else
-		$files = "<b>Could not read files in $_SESSION[ELISQLREPORTS_Backupdir]</b>";
-	return $files;
-}
-function ELISQLREPORTS_make_Backup($db_date, $db_name = DB_NAME, $db_host = DB_HOST) {
-	ELISQLREPORTS_set_backupdir();
-	$backup_sql = "/* Backup of $db_name on $db_host at $db_date */\n\n";
-	$sql = "show full tables where Table_Type = 'BASE TABLE'";
-	$result = mysql_query($sql);
-	if (mysql_errno())
-		$backup_sql .= "/* SQL ERROR: ".mysql_error()." */\n\n/*$sql*/\n\n";
-	else {
-		while ($row = mysql_fetch_row($result)) {
-			$backup_sql .= ELISQLREPORTS_get_structure($row[0]);
-			$backup_sql .= ELISQLREPORTS_get_data($row[0]);
-		}
-		mysql_free_result($result);
-		$sql = "show full tables where Table_Type = 'VIEW'";
-		if ($result = mysql_query($sql)) {
-			while ($row = mysql_fetch_row($result))
-				$backup_sql .= ELISQLREPORTS_get_structure($row[0], "View");
+	$db_date = date($date_format);
+	$subject = "$backup_type.$db_name.$db_host.sql";
+	$filename = "z.$db_date.$subject";
+	$backup_file = trailingslashit($_SESSION['ELISQLREPORTS_Backupdir']).$filename;
+	$content = '';
+	$uid = md5(time());
+	$message = "\r\n--$uid\r\nContent-type: text/html; charset=\"iso-8859-1\"\r\nContent-Transfer-Encoding: 7bit\r\n\r\n";
+	if ($ELISQLREPORTS_backup_file = fopen($backup_file, 'w')) {
+		fwrite($ELISQLREPORTS_backup_file, "/* Backup of $db_name on $db_host at $db_date */\n\n");
+		$sql = "show full tables where Table_Type = 'BASE TABLE'";
+		$result = mysql_query($sql);
+		$errors = "";
+		if (mysql_errno())
+			$errors .= "/* SQL ERROR: ".mysql_error()." */\n\n/*$sql*/\n\n";
+		else {
+			while ($row = mysql_fetch_row($result)) {
+				$errors .= ELISQLREPORTS_get_structure($row[0]);
+				if (!is_numeric($rows = ELISQLREPORTS_get_data($row[0])))
+					$errors .= $rows;
+			}
 			mysql_free_result($result);
+			$sql = "show full tables where Table_Type = 'VIEW'";
+			if ($result = mysql_query($sql)) {
+				while ($row = mysql_fetch_row($result))
+					$errors .= ELISQLREPORTS_get_structure($row[0], "View");
+				mysql_free_result($result);
+			}
 		}
-	}
-	$backup_file = trailingslashit($_SESSION['ELISQLREPORTS_Backupdir'])."$db_name.$db_host.$db_date.sql";
-	if (file_put_contents($backup_file, $backup_sql))
-		echo "Saved $backup_file";
-	else
-		echo "Failed to save backup!";
-}
-function ELISQLREPORTS_get_structure($table, $type='Table') {
-	$return = "/* Table structure for `$table` */\n\n";
-	$sql = "SHOW CREATE $type `$table`; ";
-	if ($result = mysql_query($sql)) {
-		$return .= "DROP TABLE IF EXISTS `$table`;\n\n";
-		if ($row = mysql_fetch_assoc($result))
-			$return .= preg_replace('/CREATE .+? VIEW/', 'CREATE VIEW', $row["Create $type"]).";\n\n";
-		mysql_free_result($result);
+		fclose($ELISQLREPORTS_backup_file);
+		$zip = new ZipArchive();
+		$file = $backup_file.'.zip';
+		$return = "Backup: $subject Saved";
+		$message .= "A database backup was saved on <a href='".trailingslashit(get_option("siteurl"))."wp-admin/admin.php?page=ELISQLREPORTS-settings'>".(get_option("blogname"))."</a>.\r\n<p><pre>$errors</pre><p>";
+		if ($zip->open($file, ZIPARCHIVE::CREATE) === true) {
+			$zip->addFile($backup_file, $filename);
+			$zip->close();
+			$sql_files = array();
+			if (is_file($file) && ($handle = opendir($_SESSION['ELISQLREPORTS_Backupdir']))) {
+				while (false !== ($entry = readdir($handle))) {
+					if (is_file(trailingslashit($_SESSION['ELISQLREPORTS_Backupdir']).$entry)) {
+						if (substr($entry, (-1 * strlen($subject))) == $subject)
+							@unlink(trailingslashit($_SESSION['ELISQLREPORTS_Backupdir']).$entry);
+						if (substr($entry, (-1 * strlen($subject.'.zip'))) == $subject.'.zip')
+							$sql_files[] = "$entry";
+					}
+				}
+				closedir($handle);
+				sort($sql_files);
+			} else
+				$return .= " but not Zipped";
+			if (isset($ELISQLREPORTS_settings_array[$backup_type."_backup"]) && $ELISQLREPORTS_settings_array[$backup_type."_backup"] > 0) {
+				$del=0;
+				while (count($sql_files)>$ELISQLREPORTS_settings_array[$backup_type."_backup"])
+					if (@unlink(trailingslashit($_SESSION['ELISQLREPORTS_Backupdir']).array_shift($sql_files)))
+						$del++;
+				$message .= "\r\nNumber of archives:<li>Deleted: $del</li><li>Kept: ".count($sql_files)."</li><p>";
+			}
+			if (strlen($ELISQLREPORTS_settings_array["backup_email"])) {
+				if (file_exists($file)) {
+					$file_size = filesize($file);
+					$handle = fopen($file, "rb");
+					$content .= "The backup has been attached to this email for your convenience.\r\n\r\n--$uid\r\nContent-Type: application/octet-stream; name=\"$filename.zip\"\r\nContent-Transfer-Encoding: base64\r\nContent-Disposition: attachment; filename=\"$filename.zip\"\r\n\r\n".chunk_split(base64_encode(fread($handle, $file_size)), 70, "\r\n");
+					fclose($handle);
+				}
+			}
+		}
 	} else
-		$return .= "/* requires the SHOW VIEW privilege and the SELECT privilege */\n\n";
+		$return = "Failed to save backup!";
+	if (strlen($ELISQLREPORTS_settings_array["backup_email"])) {
+		$headers = 'From: '.get_option("admin_email")."\r\n";
+		$headers .= "MIME-Version: 1.0\r\n";
+		$headers .= "Content-Type: multipart/mixed; boundary=\"$uid\"\r\n";
+		$upload = wp_upload_dir();
+		if (mail($ELISQLREPORTS_settings_array["backup_email"], $return, $message.$content."\r\n\r\n--$uid--", $headers))
+			$return .= " and Sent!";
+		else
+			mail($ELISQLREPORTS_settings_array["backup_email"], $return, $message.strlen($content)." bytes is too large to attach but you can download it <a href='".trailingslashit($upload['baseurl'])."SQL_Backups/$filename.zip'>here</a>.\r\n\r\n--$uid--", $headers);
+	}
 	return $return;
 }
+function ELISQLREPORTS_get_structure($table, $type='Table') {
+	global $ELISQLREPORTS_backup_file;
+	fwrite($ELISQLREPORTS_backup_file, "/* $type structure for `$table` */\n\n");
+	$sql = "SHOW CREATE $type `$table`; ";
+	if ($result = mysql_query($sql)) {
+		fwrite($ELISQLREPORTS_backup_file, "DROP $type IF EXISTS `$table`;\n\n");
+		if ($row = mysql_fetch_assoc($result))
+			fwrite($ELISQLREPORTS_backup_file, preg_replace('/CREATE .+? VIEW/', 'CREATE VIEW', $row["Create $type"]).";\n\n");
+		mysql_free_result($result);
+	} else
+		return "/* requires the SHOW VIEW privilege and the SELECT privilege */\n\n";
+	return '';
+}
 function ELISQLREPORTS_get_data($table) {
+	global $ELISQLREPORTS_backup_file;
 	$sql = "SELECT * FROM `$table`;";
-	$result = mysql_query($sql);
-	$return = '';
-	if ($result) {
+	if ($result = mysql_query($sql)) {
 		$num_rows = mysql_num_rows($result);
 		$num_fields = mysql_num_fields($result);
+		$return = 0;
 		if ($num_rows > 0) {
-			$return .= "/* Table data for `$table` */\n";
+			fwrite($ELISQLREPORTS_backup_file, "/* Table data for `$table` */\n\n");
 			$field_type = array();
 			$i = 0;
+			$field_list = " (";
 			while ($i < $num_fields) {
 				$meta = mysql_fetch_field($result, $i);
 				array_push($field_type, $meta->type);
+				$field_list .= ($i?', ':'')."`$meta->name`";
 				$i++;
 			}
+			$field_list .= ")";
 			$maxInsertSize = 100000;
 			$statementSql = '';
 			for ($index = 0; $row = mysql_fetch_row($result); $index++) {
-				if (!$statementSql) $statementSql .= "INSERT INTO `$table` VALUES\n";
+				$return++;
+				if (strlen($statementSql) > $maxInsertSize) {
+					fwrite($ELISQLREPORTS_backup_file, $statementSql.";\n\n");
+					$statementSql = "";
+				}
+				if (strlen($statementSql) == 0)
+					$statementSql = "INSERT INTO `$table`$field_list VALUES\n";
+				else
+					$statementSql .= ",\n";
 				$statementSql .= "(";
 				for ($i = 0; $i < $num_fields; $i++) {
 					if (is_null($row[$i]))
@@ -212,46 +256,32 @@ function ELISQLREPORTS_get_data($table) {
 						$statementSql .= ",";
 				}
 				$statementSql .= ")";
-
-				if (strlen($statementSql) > $maxInsertSize || $index == $num_rows - 1) {
-					$return .= $statementSql.";\n";
-					$statementSql = '';
-				} else {
-					$statementSql .= ",\n";
-				}
 			}
+			if ($statementSql)
+				fwrite($ELISQLREPORTS_backup_file, $statementSql.";\n\n");
 		}
-	}
-	mysql_free_result($result);
-	return $return."\n";
+		mysql_free_result($result);
+	} else
+		$return = "SELECT ERROR for `$table`: ".mysql_error()."\n";
+	return $return;
 }
-function ELISQLREPORTS_load_backup($file_sql) {
-	ELISQLREPORTS_set_backupdir();
-	if (file_exists(trailingslashit($_SESSION['ELISQLREPORTS_Backupdir']).$file_sql)) {
-		ELISQLREPORTS_restore_backup(file_get_contents(trailingslashit($_SESSION['ELISQLREPORTS_Backupdir']).$file_sql));
-//	} else {
-	}
-}
-function ELISQLREPORTS_restore_backup($full_sql) {
-	if (@preg_match('/;\n/', $full_sql)) {
-		$full_sql = file_get_contents(trailingslashit($_SESSION['ELISQLREPORTS_Backupdir']).$file_sql);
-		$_SESSION['query'] = 'l='.strlen($full_sql);
-		$sql = preg_replace("|/\*.+\*/\n|", "", $full_sql);
-		$queries = explode(";\n", $sql);
-		if (count($queries) == 1)
-			$_SESSION['query'] .= ', sql='.($full_sql);
-		else
-			$_SESSION['query'] .= ', c='.count($queries);
-		foreach ($queries as $query) {
-			if (!trim($query)) continue;
-			if (mysql_query($query) === false)
-				return false;
-			else
-				$_SESSION['query'] = $query;
+function ELISQLREPORTS_restore_backup($file_sql) {
+	if ($full_sql = file_get_contents(trailingslashit($_SESSION['ELISQLREPORTS_Backupdir']).$file_sql)) {
+		$queries = 0;
+		$errors = array();
+		$startpos = 0;
+		while ($endpos = strpos($full_sql, ";\n", $startpos)) {
+			if ($sql = trim(@preg_replace("|/\*.+\*/\n|", "", substr($full_sql, $startpos, $endpos - $startpos)).' ')) {
+				if (mysql_query($sql))
+					$queries++;
+				else
+					$errors[] = "<li>".mysql_error()."</li>";
+			}
+			$startpos = $endpos + 2;
 		}
-		return true;
-//	} else {
-	}
+		return "<li>Restore Process executed $queries queries with ".count($errors)." errors!</li><br>".implode("\n", $errors);
+	} else
+		return 'Error Reading File:'.trailingslashit($_SESSION['ELISQLREPORTS_Backupdir']).$file_sql;
 }
 function ELISQLREPORTS_display_File($dFile) {
 	if (file_exists(dirname(__FILE__).'/'.strtolower($dFile).'.txt')) {
@@ -272,7 +302,10 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_start'] = microtime(
 		$Rtitle = 'Unsaved Report';
 	elseif ($MySQL == '') {
 		$ELISQLREPORTS_reports_array = get_option($ELISQLREPORTS_plugin_dir.'_reports_array');
-		if (isset($ELISQLREPORTS_reports_array) && is_array($ELISQLREPORTS_reports_array) && isset($ELISQLREPORTS_reports_array[$Rtitle]))
+		$ELISQLREPORTS_reports_keys = array();
+		foreach (array_keys($ELISQLREPORTS_reports_array) as $ELISQLREPORTS_reports_key)
+			$ELISQLREPORTS_reports_keys[sanitize_title($ELISQLREPORTS_reports_key)] = $ELISQLREPORTS_reports_key;
+		if (isset($ELISQLREPORTS_reports_array) && is_array($ELISQLREPORTS_reports_array) && (isset($ELISQLREPORTS_reports_array[$Rtitle]) || isset($ELISQLREPORTS_reports_array[$ELISQLREPORTS_reports_keys[sanitize_title($Rtitle)]])))
 			$MySQL = ($ELISQLREPORTS_reports_array[$Rtitle]);
 		else
 			$MySQL = $ELISQLREPORTS_Report_SQL;
@@ -298,12 +331,12 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_end_mysql_query'] = 
 		$report .= '<li>debug:<textarea width="100%" style="width: 100%;" rows="5" class="shadowed-box">'.mysql_error().'</textarea>';
 	else {
 		if ($rs = mysql_fetch_assoc($result)) {
-			$report .= '<table border=1 cellspacing=0 class="ELISQLREPORTS-table"><tr class="ELISQLREPORTS-Header-Row">';
+			$report .= '<table border=1 cellspacing=0 cellpadding=4 class="ELISQLREPORTS-table"><tr class="ELISQLREPORTS-Header-Row">';
 			foreach ($rs as $field => $value) {
 				if ($Rtitle == 'Unsaved Report')
-					$report .= '<td>&nbsp;<b><a href="javascript: document.SQLForm.submit();" onclick="document.SQLForm.action+=\'&SQL_ORDER_BY[]='.$field.'\'">'.$field.'</a></b>&nbsp;</td>';
+					$report .= '<td><b><a href="javascript: document.SQLForm.submit();" onclick="document.SQLForm.action+=\'&SQL_ORDER_BY[]='.$field.'\'">'.$field.'</a></b></td>';
 				else
-					$report .= '<td>&nbsp;<b>'.$field.'</b>&nbsp;</td>';
+					$report .= '<td><b>'.$field.'</b></td>';
 			}
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_start_while_mysql_fetch_assoc'] = microtime(true);
 			$row=0;
@@ -312,14 +345,14 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_start_while_mysql_fe
 				$row++;
 				$report .= '</tr><tr class="ELISQLREPORTS-Row-'.$row.' ELISQLREPORTS-'.($OddEven[$row%2]).'-Row">';
 				foreach ($rs as $field => $value)
-					$report .= '<td>&nbsp;'.($value).'&nbsp;</td>';//is_array(maybe_unserialize($value))?print_r(maybe_unserialize($value),1):
+					$report .= '<td>'.($value).'</td>';//is_array(maybe_unserialize($value))?print_r(maybe_unserialize($value),1):
 			} while ($rs = mysql_fetch_assoc($result));
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_end_while_mysql_fetch_assoc'] = microtime(true);
 			$report .= '</tr></table>';
 		} else
 			$report .= '<li>Report is Empty!';
 	}
-	$report .= '</div><br style="clear: left;"></div></div>';
+	$report .= '</div>';
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_view_report_end'] = microtime(true);
 	return $report;
 }
@@ -340,7 +373,6 @@ function ELISQLREPORTS_eval($SQL) {
 }
 function ELISQLREPORTS_report_form($Report_Name = '', $Report_SQL = '') {
 	global $ELISQLREPORTS_plugin_dir, $ELISQLREPORTS_Report_SQL;
-$_SESSION['eli_debug_microtime']['ELISQLREPORTS_report_form_start'] = microtime(true);
 	if (strlen(trim($ELISQLREPORTS_Report_SQL))>0)
 		$Report_SQL = $ELISQLREPORTS_Report_SQL;
 	$mysql_info = mysql_info();
@@ -349,14 +381,14 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_report_form_start'] = microtime(
 	if (strlen($Report_Name) > 0 && !(mysql_errno() && !strpos(mysql_error(), "syntax to use near '\\'")))
 		echo '<input type="button" style="display: block;" value="Edit Report" onclick="document.getElementById(\'SQLFormDiv\').style.display=\'block\';this.style.display=\'none\';"><div id="SQLFormDiv" style="display: none;"><form method="POST" name="SQLForm" id="SQLForm" action="'.$_SERVER_REQUEST_URI.'"><input type="submit" value="DELETE REPORT" onclick="if (confirm(\'Are you sure you want to DELETE This Report?\')) { document.SQLForm.action=\'admin.php?page=ELISQLREPORTS-create-report\'; document.SQLForm.rSQL.value=\'DELETE_REPORT\'; document.SQLForm.rName.value=\''.str_replace("\"", "&quot;", str_replace('\'', '\\\'', str_replace('\\', '\\\\', $Report_Name))).'\'; }"><br />';
 	else {
-		if (mysql_errno() && !strpos(mysql_error(), "syntax to use near '\\'"))
+		if (mysql_errno() && strlen(trim($Report_SQL)) && !strpos(mysql_error(), "syntax to use near '\\'"))
 			echo '<div class="error">ERROR: '.htmlspecialchars(mysql_error()." SQL:$result").'</div>';
 		echo '<div id="SQLFormDiv"><form action="'.$_SERVER_REQUEST_URI.'" id="SQLForm" method="POST" name="SQLForm">';
 	}
 	echo 'Type or Paste your SQL into this box and give your report a name<br />
-	<textarea width="100%" style="width: 100%;" rows="10" name="rSQL" class="shadowed-box" onchange="setButtonValue(\'Update Report\');">'.($Report_SQL).'</textarea><br /><br />Report Name: <input type="text" id="reportName" name="rName" value="'.($Report_Name).'" onchange="setButtonValue(\'Save Report\');" /> <input id="gobutton" type="submit" class="button-primary" value="'.(strlen($Report_Name)>0?'Refresh Report" /> &nbsp; Shortcode: [SQLREPORT name="'.$Report_Name.'"]':'Test SQL" />').'</form></div>
+	<textarea width="100%" style="width: 100%;" rows="10" name="rSQL" class="shadowed-box" onchange="setButtonValue(\'Update Report\');">'.htmlspecialchars($Report_SQL).'</textarea><br /><br />Report Name: <input type="text" id="reportName" name="rName" value="'.htmlspecialchars($Report_Name).'" onchange="setButtonValue(\'Save Report\');" /> <input id="gobutton" type="submit" class="button-primary" value="'.(strlen($Report_Name)>0?'Refresh Report" /> &nbsp; Shortcode: [SQLREPORT name="'.sanitize_title($Report_Name).'"]':'Test SQL" />').'</form></div>
 <script>
-var oldName="'.($Report_Name).'";
+var oldName="'.htmlspecialchars($Report_Name).'";
 function setButtonValue(newval) {
 	rN = document.getElementById(\'reportName\').value;
 	if (oldName.length > 0) {
@@ -379,11 +411,9 @@ function setButtonValue(newval) {
 		}
 	}
 	return $Report_SQL;
-$_SESSION['eli_debug_microtime']['ELISQLREPORTS_report_form_end'] = microtime(true);
 }
 function ELISQLREPORTS_default_report($Rtitle = '') {
 	global $ELISQLREPORTS_plugin_dir;
-$_SESSION['eli_debug_microtime']['ELISQLREPORTS_default_report_start'] = microtime(true);
 	echo '<style>
 	.rounded-corners {margin: 10px; padding: 10px; -webkit-border-radius: 10px; -moz-border-radius: 10px; border: 1px solid #000000;}
 	.shadowed-box {box-shadow: -3px 3px 3px #666666; -moz-box-shadow: -3px 3px 3px #666666; -webkit-box-shadow: -3px 3px 3px #666666;}
@@ -404,50 +434,188 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_default_report_start'] = microti
 		echo ELISQLREPORTS_view_report($Rtitle, $MySQL);
 	} else
 		ELISQLREPORTS_create_report();
-$_SESSION['eli_debug_microtime']['ELISQLREPORTS_default_report_end'] = microtime(true);
+	echo '<br style="clear: both;"></div></div>';
 }
 function ELISQLREPORTS_create_report() {
-	global $ELISQLREPORTS_plugin_dir, $ELISQLREPORTS_Report_SQL, $ELISQLREPORTS_settings_array, $ELISQLREPORTS_saved_reports;
-$_SESSION['eli_debug_microtime']['ELISQLREPORTS_create_report_start'] = microtime(true);
-	$menu_opts = '<div class="stuffbox shadowed-box">
-	<h3 class="hndle"><span>Menu Item Placement Options</span></h3>
-	<div class="inside"><form method="POST" name="ELISQLREPORTS_menu_Form">Place <b>SQL Reports</b>:<br />';
-	foreach (array("below <b>Comments</b> and<br />&nbsp;above <b>Appearance</b>","below <b>Settings</b>") as $mg => $menu_group)
-		$menu_opts .= '<div style="padding: 4px 24px;" id="menu_group_div_'.$mg.'"><input type="radio" name="ELISQLREPORTS_menu_group" value="'.$mg.'"'.($ELISQLREPORTS_settings_array["menu_group"]==$mg||$mg==0?' checked':'').' onchange="document.ELISQLREPORTS_menu_Form.submit();" />'.$menu_group.'</div>';
-	$menu_opts .= 'Sort <b>Saved Reports</b> by:<br />';
-	$sort_order = array("Date Created","Alphabetical");
-	foreach ($sort_order as $mg => $menu_sort)
-		$menu_opts .= '<div style="padding: 4px 24px;" id="menu_sort_div_'.$mg.'"><input type="radio" name="ELISQLREPORTS_menu_sort" value="'.$mg.'"'.($ELISQLREPORTS_settings_array["menu_sort"]==$mg||$mg==0?' checked':'').' onchange="document.ELISQLREPORTS_menu_Form.submit();" />'.$menu_sort.'</div>';
-	$menu_opts .= '</form></div></div>';
-	if (strlen(trim($ELISQLREPORTS_saved_reports)))
-		$menu_opts .= '<div class="stuffbox shadowed-box">
-	<h3 class="hndle"><span>Saved Reports</span></h3>
-	<div class="inside" style="margin-left: 10px;">'.$ELISQLREPORTS_saved_reports.'</div></div>';
+	global $ELISQLREPORTS_plugin_dir, $ELISQLREPORTS_Report_SQL, $ELISQLREPORTS_settings_array, $wpdb;
 	ELISQLREPORTS_display_header('Creation', $menu_opts);
 	$ELISQLREPORTS_reports_array = get_option($ELISQLREPORTS_plugin_dir.'_reports_array');
+	$end = '</div>';
+	if (strlen(trim($ELISQLREPORTS_Report_SQL))==0) {
+		$ELISQLREPORTS_Report_SQL="SELECT table_name FROM INFORMATION_SCHEMA.TABLES WHERE table_schema = '".DB_NAME."'";
+		$Report_Name = '<font color="red">Table List</font>';
+		echo '<div id="report-section" style="float: right; width: 290px; overflow: hidden;">'.preg_replace('/<td>(.+?)<\/td><\/tr>/ie', '"<td><a href=\\"javascript:document.SQLForm.rSQL.value=\'SELECT * FROM `\1`\';document.SQLForm.submit();\\">\1</a></td><td>".ELISQLREPORTS_get_var("SELECT COUNT(*) FROM `\1`")."</td>\n</tr>"', str_replace('table_name</b></td></tr>', "table_name</b></td><td><b>rows</b></td>\n</tr>", ELISQLREPORTS_view_report($Report_Name, $ELISQLREPORTS_Report_SQL))).'</div><div style="padding-right: 300px;">';
+		$ELISQLREPORTS_Report_SQL = '';
+	} else
+		$end = ELISQLREPORTS_view_report($Report_Name, $ELISQLREPORTS_Report_SQL);
 	$Report_Name = '';
-	if (strlen(trim($ELISQLREPORTS_Report_SQL))==0)
-		$ELISQLREPORTS_Report_SQL="SELECT CONCAT('<a href=\"javascript:document.SQLForm.rSQL.value=\'SELECT * FROM ',table_name,'\';document.SQLForm.submit();\">',table_name,'</a>') as `Table List` FROM INFORMATION_SCHEMA.TABLES WHERE table_schema = '".DB_NAME."'";
-	echo '<div style="padding: 10px;" class="alignleft">';
 	ELISQLREPORTS_report_form($Report_Name, $ELISQLREPORTS_Report_SQL);
-	echo '</div>
-	<div id="report-section">';
-	echo ELISQLREPORTS_view_report($Report_Name, $ELISQLREPORTS_Report_SQL).'</div>';
-$_SESSION['eli_debug_microtime']['ELISQLREPORTS_create_report_end'] = microtime(true).$ELISQLREPORTS_Report_SQL;
+	echo $end.'</div></div>';
 }
+function ELISQLREPORTS_settings() {
+	global $ELISQLREPORTS_plugin_dir, $ELISQLREPORTS_Report_SQL, $ELISQLREPORTS_settings_array, $ELISQLREPORTS_saved_reports, $wpdb;
+	ELISQLREPORTS_display_header('Setting', $menu_opts);
+	$sort_order = array("Date Created","Alphabetical");
+	echo '<div class="stuffbox shadowed-box">
+	<h3 class="hndle"><span>Menu Options</span></h3>
+	<div class="inside" style="margin: 10px;"><form method="POST" name="ELISQLREPORTS_menu_Form"><div style="float: left;">Place <b>SQL Reports</b> Menu Item:<br />';
+	foreach (array("below <b>Comments</b> and above <b>Appearance</b>","below <b>Settings</b>") as $mg => $menu_group)
+		echo '<div style="padding: 4px 24px;" id="menu_group_div_'.$mg.'"><input type="radio" name="ELISQLREPORTS_menu_group" value="'.$mg.'"'.($ELISQLREPORTS_settings_array["menu_group"]==$mg||$mg==0?' checked':'').' onchange="document.ELISQLREPORTS_menu_Form.submit();" />'.$menu_group.'</div>';
+	echo '</div><div style="float: left;">Sort <b>Saved Reports</b> by:<br />';
+	foreach ($sort_order as $mg => $menu_sort)
+		echo '<div style="padding: 4px 24px;" id="menu_sort_div_'.$mg.'"><input type="radio" name="ELISQLREPORTS_menu_sort" value="'.$mg.'"'.($ELISQLREPORTS_settings_array["menu_sort"]==$mg||$mg==0?' checked':'').' onchange="document.ELISQLREPORTS_menu_Form.submit();" />'.$menu_sort.'</div>';
+	echo '</div><br style="clear: left;"></form></div></div>
+	<div id="backuprestore" class="shadowed-box stuffbox"><h3 class="hndle"><span>Database Backup Settings</span></h3><div class="inside" style="margin: 10px;"><form method=post><input type="submit" value="Save Settings" class="button-primary" style="float: right;">Email all backups to: <input name="ELISQLREPORTS_backup_email" value="'.$ELISQLREPORTS_settings_array["backup_email"].'"><br />Automatically make and keep <input size=1 name="ELISQLREPORTS_hourly_backup" value="'.$ELISQLREPORTS_settings_array["hourly_backup"].'"> Hourly and <input size=1 name="ELISQLREPORTS_daily_backup" value="'.$ELISQLREPORTS_settings_array["daily_backup"].'"> Daily backups.<br />';
+	if ($next = wp_next_scheduled('ELISQLREPORTS_hourly_backup', array("Y-m-d-H-i-s", 'hourly')))
+		echo "<li>next hourly backup: ".date("Y-m-d H:i:s", $next)." (About ".ceil(($next-time())/60)." minute".(ceil(($next-time())/60)==1?'':'s')." from now)</li>";
+//	else echo md5(serialize($args)).'='.serialize($args);
+	if ($next = wp_next_scheduled('ELISQLREPORTS_daily_backup', array("Y-m-d-H-i-s", 'daily')))
+		echo "<li>next daily backup: ".date("Y-m-d H:i:s", $next)." (Less than ".ceil(($next-time())/60/60)." hour".(ceil(($next-time())/60/60)==1?'':'s')." from now)</li>";
+	echo '</form></div></div>
+	<div id="backuprestore" class="shadowed-box stuffbox"><h3 class="hndle"><span>Database Maintenance</span></h3>
+		<div class="inside" style="margin: 10px;">
+			<form method=post>';
+	ELISQLREPORTS_set_backupdir();
+	$opts = array("Y-m-d-H-i-s" => "Make A New Backup", "DELETE Post Revisions" => array("DELETE FROM wp_posts WHERE `wp_posts`.`post_type` = 'revision'", "DELETE FROM wp_postmeta WHERE `wp_postmeta`.`post_id` NOT IN (SELECT `wp_posts`.`ID` FROM `wp_posts`)", "OPTIMIZE TABLE wp_posts, wp_postmeta"), "DELETE Spam Comments" => array("DELETE FROM wp_comments WHERE `wp_comments`.`comment_approved` = 'spam'", "DELETE FROM wp_commentmeta WHERE `wp_commentmeta`.`comment_id` NOT IN (SELECT `wp_comments`.`comment_ID` FROM `wp_comments`)", "OPTIMIZE TABLE wp_comments, wp_commentmeta"));
+	$repair_tables = $wpdb->get_col("show full tables where Table_Type = 'BASE TABLE'");
+	if (is_array($repair_tables) && count($repair_tables))
+		$opts["REPAIR All Tables"] = array('REPAIR TABLE `'.implode('`, `', $repair_tables).'`');
+	$backupDB = get_option("ELISQLREPORTS_BACKUP_DB", array("DB_NAME" => DB_NAME, "DB_HOST" => DB_HOST, "DB_USER" => DB_USER, "DB_PASSWORD" => DB_PASSWORD));
+	$js = "Restore to the following Database:<br />";
+	$local = true;
+	foreach ($backupDB as $db_key => $db_value) {
+		$js .= $db_key.':<input name="'.$db_key;
+		if (isset($_POST[$db_key])) {
+			$backupDB[$db_key] = $_POST[$db_key];
+			$js .= '" readonly="true';
+		}
+		$js .= '" value="'.$backupDB[$db_key].'"><br />';
+		if (constant($db_key) != $backupDB[$db_key])
+			$local = false;
+	}
+	update_option("ELISQLREPORTS_BACKUP_DB", $backupDB);
+	$js .= 'Warning: This '.($local?'is':'is NOT').' your currently active WordPress database conection info for this site.<br /><select name="db_date">';
+	if (isset($_POST['db_date']) && strlen($_POST['db_date'])) {
+		if (isset($opts[$_POST['db_date']]) && is_array($opts[$_POST['db_date']])) {
+			foreach ($opts[$_POST['db_date']] as $MySQLexec) {
+				ELISQLREPORTS_eval($MySQLexec);
+				if (mysql_errno())
+					echo "<li>".mysql_error()."</li>";
+				else {
+					if (preg_match('/ FROM /', $MySQLexec))
+						echo preg_replace('/^(.+?) FROM (.+?) .*/', '<li>\\1 '.mysql_affected_rows().' Records from \\2 Succeeded!</li>', $MySQLexec);
+					else
+						echo "<li>$MySQLexec Succeeded!</li>";
+				}
+			}
+		} elseif (is_file(trailingslashit($_SESSION['ELISQLREPORTS_Backupdir']).'z.'.$_POST['db_date'].'.sql.zip')) {
+			if (mysql_connect($_POST['DB_HOST'], $_POST['DB_USER'], $_POST['DB_PASSWORD'])) {
+				if (mysql_select_db($_POST['DB_NAME'])) {
+					if (isset($_POST['db_nonce']) && wp_verify_nonce($_POST['db_nonce'], $_POST['db_date'])) {
+						$zip = new ZipArchive;
+						if ($zip->open(trailingslashit($_SESSION['ELISQLREPORTS_Backupdir']).'z.'.$_POST['db_date'].'.sql.zip') === TRUE) {
+							$zip->extractTo(trailingslashit($_SESSION['ELISQLREPORTS_Backupdir']));
+							$zip->close();
+							echo ELISQLREPORTS_make_backup("Y-m-d-H-i-s", "pre-restore", $_POST['DB_NAME'], $_POST['DB_HOST']);
+							echo ELISQLREPORTS_restore_backup('z.'.$_POST['db_date'].'.sql');
+						} else
+							echo 'ERROR: Failed to extract Zip Archive!';
+					} else {
+						die($js.'<option value="'.$_POST['db_date'].'">RESTORE '.$_POST['db_date'].'</option></select><br /><input name="db_nonce" type="checkbox" value="'.wp_create_nonce($_POST['db_date']).'"> Yes, I understand that I will be completely erasing this database with my backup file.<br /><input type="submit" value="Restore Backup to Database Now!"></div></form></div></div></body></html>');
+					}
+				} else
+					echo 'Database Selection ERROR: '.mysql_error();
+			} else
+				echo 'Database Connection ERROR: '.mysql_error();
+		} else
+			echo ELISQLREPORTS_make_Backup($_POST['db_date']);
+	} elseif (isset($_GET['delete']) && is_file(trailingslashit($_SESSION['ELISQLREPORTS_Backupdir']).str_replace('/', '', str_replace('\\', '', $_GET['delete'])))) {
+		$delete = trailingslashit($_SESSION['ELISQLREPORTS_Backupdir']).str_replace('/', '', str_replace('\\', '', $_GET['delete']));
+		@unlink($delete);
+		if (is_file(substr($delete, 0, -4)))
+			@unlink(substr($delete, 0, -4));
+	}
+//INSERT INTO `mysql`.`host` (`Host`, `Db`, `Select_priv`, `Insert_priv`, `Update_priv`, `Delete_priv`, `Create_priv`, `Drop_priv`, `Grant_priv`, `References_priv`, `Index_priv`, `Alter_priv`, `Create_tmp_table_priv`, `Lock_tables_priv`, `Create_view_priv`, `Show_view_priv`, `Create_routine_priv`, `Alter_routine_priv`, `Execute_priv`, `Trigger_priv`) VALUES ('secure196.yoftp.com', 'elijah_gotmls.net', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y');
+	echo '<div id="makebackup">
+			<select name="db_date" id="db_date" onchange="if (this.value == \'RESTORE\') make_restore();">';
+	foreach ($opts as $opt => $arr)
+		echo '<option value="'.$opt.'">'.(is_array($arr)?$opt:$arr).'</option>';
+	$sql_files = array();
+	if ($handle = opendir($_SESSION['ELISQLREPORTS_Backupdir'])) {
+		while (false !== ($entry = readdir($handle)))
+			if (is_file(trailingslashit($_SESSION['ELISQLREPORTS_Backupdir']).$entry) && strtolower(substr($entry, -8)) == ".sql.zip")
+				$sql_files[substr($entry, 2, -8)] = filesize(trailingslashit($_SESSION['ELISQLREPORTS_Backupdir']).$entry);
+		closedir($handle);
+		ksort($sql_files);
+		if (count($sql_files)) {
+			$files = "\n<b>Current Backups:</b> (".$_SESSION['ELISQLREPORTS_Backupdir'].")\n";
+			$upload = wp_upload_dir();
+			foreach ($sql_files as $entry => $size)
+				$files .= "<li>($size) $entry <a href='".trailingslashit($upload['baseurl'])."SQL_Backups/z.$entry.sql.zip'>[Download]</a> | <a href='".str_replace("&delete=", "&lastdelete=", $_SERVER['REQUEST_URI'])."&delete=z.$entry.sql.zip'>[DELETE]</a></li>\n";
+			echo '<option value="RESTORE">RESTORE A Backup</option>';
+		} else
+			$files = "\n<b>No backups have yet been made</b>";
+	} else
+		$files = "\n<b>Could not read files in ".$_SESSION['ELISQLREPORTS_Backupdir']."</b>";
+	foreach (array_reverse($sql_files) as $entry => $size)
+		$js .= "<option value=\"$entry\">RESTORE $entry ($size)</option>";
+	$js .= '</select><br /><input type="submit" value="Restore Selected Backup to Database">';
+	echo "</select><input type=submit value=Run /></div><script>function make_restore() {document.getElementById('makebackup').innerHTML='$js';}</script><br />$files</form></div></div></div></div>";
+}
+add_action('ELISQLREPORTS_daily_backup', 'ELISQLREPORTS_make_Backup', 10, 2);
+add_action('ELISQLREPORTS_hourly_backup', 'ELISQLREPORTS_make_Backup', 10, 2);
+function ELISQLREPORTS_deactivation() {
+	while (wp_next_scheduled('ELISQLREPORTS_daily_backup', array("Y-m-d-H-i-s", 'daily')))
+		wp_clear_scheduled_hook('ELISQLREPORTS_daily_backup', array("Y-m-d-H-i-s", 'daily'));
+	while (wp_next_scheduled('ELISQLREPORTS_hourly_backup', array("Y-m-d-H-i-s", 'hourly')))
+		wp_clear_scheduled_hook('ELISQLREPORTS_hourly_backup', array("Y-m-d-H-i-s", 'hourly'));
+}
+register_deactivation_hook(__FILE__, 'ELISQLREPORTS_deactivation');
+function ELISQLREPORTS_activation() {
+	global $ELISQLREPORTS_settings_array, $ELISQLREPORTS_plugin_dir;
+	$ELISQLREPORTS_settings_array = get_option($ELISQLREPORTS_plugin_dir.'_settings_array', array());
+	if (isset($ELISQLREPORTS_settings_array["daily_backup"]) && $ELISQLREPORTS_settings_array["daily_backup"] && !wp_next_scheduled('ELISQLREPORTS_daily_backup', array("Y-m-d-H-i-s", 'daily')))
+		wp_schedule_event(time(), 'daily', 'ELISQLREPORTS_daily_backup', array("Y-m-d-H-i-s", 'daily'));
+	if (isset($ELISQLREPORTS_settings_array["hourly_backup"]) && $ELISQLREPORTS_settings_array["hourly_backup"] && !wp_next_scheduled('ELISQLREPORTS_hourly_backup', array("Y-m-d-H-i-s", 'hourly')))
+		wp_schedule_event(time(), 'hourly', 'ELISQLREPORTS_hourly_backup', array("Y-m-d-H-i-s", 'hourly'));
+}
+register_activation_hook(__FILE__, 'ELISQLREPORTS_activation');
 function ELISQLREPORTS_menu() {
 	global $ELISQLREPORTS_images_path, $ELISQLREPORTS_plugin_dir, $wp_version, $ELISQLREPORTS_Version, $ELISQLREPORTS_plugin_home, $ELISQLREPORTS_Logo_IMG, $ELISQLREPORTS_updated_images_path, $ELISQLREPORTS_Report_SQL, $ELISQLREPORTS_saved_reports, $ELISQLREPORTS_settings_array;
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_menu_start'] = microtime(true);
-	$ELISQLREPORTS_settings_array = get_option($ELISQLREPORTS_plugin_dir.'_settings_array');
+	$ELISQLREPORTS_settings_array = get_option($ELISQLREPORTS_plugin_dir.'_settings_array', array());
 	$img_path = basename(__FILE__);
 	$Full_plugin_logo_URL = get_option('siteurl');
+	if (!(isset($ELISQLREPORTS_settings_array["menu_group"])&&is_numeric($ELISQLREPORTS_settings_array["menu_group"])))
+		$ELISQLREPORTS_settings_array["menu_group"] = 0;
+	if (!(isset($ELISQLREPORTS_settings_array["menu_sort"])&&is_numeric($ELISQLREPORTS_settings_array["menu_sort"])))
+		$ELISQLREPORTS_settings_array["menu_sort"] = 0;
+	if (!(isset($ELISQLREPORTS_settings_array["hourly_backup"]) && is_numeric($ELISQLREPORTS_settings_array["hourly_backup"])))
+		$ELISQLREPORTS_settings_array["hourly_backup"] = 0;
+	if (!(isset($ELISQLREPORTS_settings_array["daily_backup"]) && is_numeric($ELISQLREPORTS_settings_array["daily_backup"])))
+		$ELISQLREPORTS_settings_array["daily_backup"] = 0;
+	if (!(isset($ELISQLREPORTS_settings_array["backup_email"]) && strlen(trim($ELISQLREPORTS_settings_array["backup_email"]))))
+		$ELISQLREPORTS_settings_array["backup_email"] = '';
+	if (isset($_POST["ELISQLREPORTS_backup_email"]) && (trim($_POST["ELISQLREPORTS_backup_email"]) != $ELISQLREPORTS_settings_array["backup_email"]))
+		$ELISQLREPORTS_settings_array["backup_email"] = trim($_POST["ELISQLREPORTS_backup_email"]);
+	if (isset($_POST["ELISQLREPORTS_daily_backup"]) && is_numeric($_POST["ELISQLREPORTS_daily_backup"]) && ($_POST["ELISQLREPORTS_daily_backup"] != $ELISQLREPORTS_settings_array["daily_backup"])) {
+		if ($ELISQLREPORTS_settings_array["daily_backup"] = intval($_POST["ELISQLREPORTS_daily_backup"])) {
+			if (!wp_next_scheduled('ELISQLREPORTS_daily_backup', array("Y-m-d-H-i-s", 'daily')))
+				wp_schedule_event(time(), 'daily', 'ELISQLREPORTS_daily_backup', array("Y-m-d-H-i-s", 'daily'));
+		} elseif (wp_next_scheduled('ELISQLREPORTS_daily_backup', array("Y-m-d-H-i-s", 'daily')))
+			wp_clear_scheduled_hook('ELISQLREPORTS_daily_backup', array("Y-m-d-H-i-s", 'daily'));
+	}
+	if (isset($_POST["ELISQLREPORTS_hourly_backup"]) && is_numeric($_POST["ELISQLREPORTS_hourly_backup"]) && ($_POST["ELISQLREPORTS_hourly_backup"] != $ELISQLREPORTS_settings_array["hourly_backup"])) {
+		if ($ELISQLREPORTS_settings_array["hourly_backup"] = intval($_POST["ELISQLREPORTS_hourly_backup"])) {
+			if (!wp_next_scheduled('ELISQLREPORTS_hourly_backup', array("Y-m-d-H-i-s", 'hourly')))
+				wp_schedule_event(time(), 'hourly', 'ELISQLREPORTS_hourly_backup', array("Y-m-d-H-i-s", 'hourly'));
+		} elseif (wp_next_scheduled('ELISQLREPORTS_hourly_backup', array("Y-m-d-H-i-s", 'hourly')))
+			wp_clear_scheduled_hook('ELISQLREPORTS_hourly_backup', array("Y-m-d-H-i-s", 'hourly'));
+	}
 	if (isset($_POST["ELISQLREPORTS_menu_group"]) && is_numeric($_POST["ELISQLREPORTS_menu_group"]) && isset($_POST["ELISQLREPORTS_menu_sort"]) && is_numeric($_POST["ELISQLREPORTS_menu_sort"]) && ($_POST["ELISQLREPORTS_menu_group"] != $ELISQLREPORTS_settings_array["menu_group"] || $_POST["ELISQLREPORTS_menu_sort"] != $ELISQLREPORTS_settings_array["menu_sort"])) {
 		$ELISQLREPORTS_settings_array["menu_group"] = $_POST["ELISQLREPORTS_menu_group"];
 		$ELISQLREPORTS_settings_array["menu_sort"] = $_POST["ELISQLREPORTS_menu_sort"];
-	} elseif (!(isset($ELISQLREPORTS_settings_array["menu_group"])&&is_numeric($ELISQLREPORTS_settings_array["menu_group"])))
-		$ELISQLREPORTS_settings_array["menu_group"] = 0;
-	elseif (!(isset($ELISQLREPORTS_settings_array["menu_sort"])&&is_numeric($ELISQLREPORTS_settings_array["menu_sort"])))
-		$ELISQLREPORTS_settings_array["menu_sort"] = 0;
+	}
 	if ($ELISQLREPORTS_settings_array["menu_group"] == 2)
 	if (!isset($ELISQLREPORTS_settings_array['img_url']))
 		$ELISQLREPORTS_settings_array['img_url'] = $img_path;
@@ -491,7 +659,8 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_menu_start'] = microtime(true);
 		add_menu_page(__('SQL Reports'), __('SQL Reports'), 'administrator', $base_page, $ELISQLREPORTS_plugin_dir.'_create_report', $Full_plugin_logo_URL);
 	else
 		add_object_page(__('SQL Reports'), __('SQL Reports'), 'administrator', $base_page, $ELISQLREPORTS_plugin_dir.'_create_report', $Full_plugin_logo_URL);
-	add_submenu_page($base_page, __('Create A New SQL Report'), __('Custom Reports'), 'administrator', $ELISQLREPORTS_plugin_dir.'-create-report', $ELISQLREPORTS_plugin_dir.'_create_report');
+	add_submenu_page($base_page, __('Create A New SQL Report'), __('Create Report'), 'administrator', $ELISQLREPORTS_plugin_dir.'-create-report', $ELISQLREPORTS_plugin_dir.'_create_report');
+	add_submenu_page($base_page, __('Plugin Settings'), __('Plugin Settings'), 'administrator', $ELISQLREPORTS_plugin_dir.'-settings', $ELISQLREPORTS_plugin_dir.'_settings');
 	$ELISQLREPORTS_saved_reports = '';
 	if (isset($ELISQLREPORTS_reports_array) && is_array($ELISQLREPORTS_reports_array)) {
 		$Report_Number = 0;
@@ -499,7 +668,7 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_menu_start'] = microtime(true);
 			ksort($ELISQLREPORTS_reports_array);
 		foreach ($ELISQLREPORTS_reports_array as $Rname => $Rquery) {
 			$Report_Number++;
-			$Rslug = $ELISQLREPORTS_plugin_dir.'-'.sanitize_title(str_replace(' ', '-', $Rname).'-'.$Report_Number);
+			$Rslug = $ELISQLREPORTS_plugin_dir.'-'.sanitize_title($Rname.'-'.$Report_Number);
 			$Rfunc = str_replace('-', '_', $Rslug);
 			add_submenu_page($base_page, __($Rname), __($Rname), 'administrator', $Rslug, $Rfunc);
 			$ELISQLREPORTS_saved_reports .= "<li><a href=\"?page=$Rslug\">$Rname</a>\n";
@@ -510,7 +679,7 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_menu_end'] = microtime(true);
 function ELISQLREPORTS_init() {
 	global $ELISQLREPORTS_plugin_dir, $ELISQLREPORTS_settings_array;
 $_SESSION['eli_debug_microtime']['ELISQLREPORTS_init_start'] = microtime(true);
-	$ELISQLREPORTS_settings_array = get_option($ELISQLREPORTS_plugin_dir.'_settings_array');
+	$ELISQLREPORTS_settings_array = get_option($ELISQLREPORTS_plugin_dir.'_settings_array', array());
 	$ELISQLREPORTS_reports_array = get_option($ELISQLREPORTS_plugin_dir.'_reports_array');
 	$_SESSION[$ELISQLREPORTS_plugin_dir.'HTTP_HOST'] = (isset($_SERVER['HTTP_HOST'])?$_SERVER['HTTP_HOST']:(isset($_SERVER['SERVER_NAME'])?$_SERVER['SERVER_NAME']:"Your Domain"));
 	if (isset($ELISQLREPORTS_reports_array) && is_array($ELISQLREPORTS_reports_array)) {
@@ -519,10 +688,10 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_init_start'] = microtime(true);
 			ksort($ELISQLREPORTS_reports_array);
 		foreach ($ELISQLREPORTS_reports_array AS $Rname => $Rquery) {
 			$Report_Number++;
-			$Rslug = $ELISQLREPORTS_plugin_dir.'-'.sanitize_title(str_replace(' ', '-', $Rname).'-'.$Report_Number);
+			$Rslug = $ELISQLREPORTS_plugin_dir.'-'.sanitize_title($Rname.'-'.$Report_Number);
 			$Rfunc = str_replace('-', '_', $Rslug);
 //				$Rfunc_exists='0'.function_exists($Rfunc);
-			$Rfunc_create = 'function '.$Rfunc.'() { ELISQLREPORTS_default_report("'.$Rname.'"); }';
+			$Rfunc_create = 'function '.$Rfunc.'() { ELISQLREPORTS_default_report("'.str_replace('"', '\\"', $Rname).'"); }';
 			eval($Rfunc_create);
 		}
 	}
@@ -548,9 +717,23 @@ $_SESSION['eli_debug_microtime']['ELISQLREPORTS_shortcode'] = $attr;
 			$ELISQLREPORTS_styles = $attr['style'];
 		else
 			$ELISQLREPORTS_styles = '';
-		$report = '<div id="'.sanitize_title($attr['name']).'-wrapper"><div id="'.sanitize_title($attr['name']).'-parent">'.ELISQLREPORTS_view_report($attr['name']);
+		$report = '<div id="'.sanitize_title($attr['name']).'-wrapper"><div id="'.sanitize_title($attr['name']).'-parent">'.ELISQLREPORTS_view_report($attr['name']).'<br style="clear: both;"></div></div>';
 	}
 	return $report;
+}
+function ELISQLREPORTS_get_var($attr, $SQL = "") {
+	global $wpdb;
+	if (!is_array($attr)) {
+		if (strlen($attr) > 0 && strlen($SQL) == 0)
+			$SQL = $attr;
+		$attr = array("column_offset"=>0, "row_offset"=>0);
+	} elseif (isset($attr["query"]))
+		$SQL = $attr["query"];
+	if (!(isset($attr["column_offset"]) && is_numeric($attr["column_offset"])))
+		$attr["column_offset"] = 0;
+	if (!(isset($attr["row_offset"]) && is_numeric($attr["row_offset"])))
+		$attr["row_offset"] = 0;
+	return $wpdb->get_var($SQL, $attr["column_offset"], $attr["row_offset"]);
 }
 $encode .= 'e';
 $ext_domain = 'ieonly.com';
@@ -565,5 +748,6 @@ register_activation_hook(__FILE__,$ELISQLREPORTS_plugin_dir.'_install');
 add_action('init', $ELISQLREPORTS_plugin_dir.'_init');
 add_action('admin_menu', $ELISQLREPORTS_plugin_dir.'_menu');
 add_shortcode("SQLREPORT", "ELISQLREPORTS_shortcode");
+add_shortcode("sqlgetvar", "ELISQLREPORTS_get_var");
 $_SESSION['eli_debug_microtime']['end_include(ELISQLREPORTS)'] = microtime(true);
 ?>
