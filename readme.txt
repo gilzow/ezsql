@@ -4,9 +4,9 @@ Author: Eli Scheetz
 Author URI: http://wordpress.ieonly.com/category/my-plugins/
 Contributors: scheeeli
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7K3TSGPAENSGS
-Tags: plugin, admin, reports, sql, mysql, database, backup, query, custom, shortcode
-Stable tag: 3.06.14
-Version: 3.06.14
+Tags: plugin, admin, reports, sql, mysql, cron, schedule, database, backup, query, shortcode
+Stable tag: 3.06.24
+Version: 3.06.24
 Requires at least: 2.6
 Tested up to: 3.5.1
 
@@ -21,7 +21,7 @@ Now your data can be automatically saved and archived every hour and/or every da
 There is also an shortcode for the wpdb::get_var function that you can use to display a single value from your database. For example, this will display the number of users on your site:
 [sqlgetvar]SELECT COUNT(*) FROM wp_users[/sqlgetvar]
 
-Updated June-14th
+Updated June-26th
 
 == Installation ==
 
@@ -41,6 +41,7 @@ Just use the shortcode SQLREPORT like this [SQLREPORT name="My Report" style="bo
 = How do I use a global variable in one of my SQL queries? =
 
 Note: This < does not display properly on web pages so I used the HTML code &lt; in this example, > works...
+
 SELECT display_name FROM wp_users WHERE ID = '&lt;?php $current_user->ID ?>'</textarea>
 (I know there are other ways to get the display name in WordPress, this is just a simple example to illustrate the proper syntax.)
 
@@ -52,6 +53,12 @@ SELECT display_name FROM wp_users WHERE ID = '&lt;?php $current_user->ID ?>'</te
 1. This is a screenshot of the Plugin Settings and the Admin Menu with some example reports.
 
 == Changelog ==
+
+= 3.06.24 =
+* Created a second method for backups that uses the command line mysql.
+* Made compression optional and backup location changable.
+* Made restore function able to connect to external an DB.
+* Fixed shortcode to work with sanitize_title.
 
 = 3.06.14 =
 * Added a WP cron scheduler for hourly and daily backups.
@@ -98,6 +105,9 @@ SELECT display_name FROM wp_users WHERE ID = '&lt;?php $current_user->ID ?>'</te
 * First version uploaded to WordPress.
 
 == Upgrade Notice ==
+
+= 3.06.24 =
+Created a second method for backups that uses the command line mysql, made compression optional and backup location changable, restore function able to connect to an external DB, and fixed shortcode to work with sanitize_title.
 
 = 3.06.14 =
 Added scheduler for hourly and daily backups, upgraded the Backup process to ZIP and email all backups, and added a shortcode for get_var.
