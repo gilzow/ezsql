@@ -5,9 +5,9 @@ Plugin URI: http://wordpress.ieonly.com/category/my-plugins/sql-reports/
 Author: Eli Scheetz
 Author URI: http://wordpress.ieonly.com/category/my-plugins/
 Description: Create and save SQL queries, run them from the Reports tab in your Admin, place them on the Dashboard for certain User Roles, or place them on Pages and Posts using the shortcode. And keep your database safe with scheduled backups.
-Version: 3.06.29
+Version: 3.08.03
 */
-$ELISQLREPORTS_Version='3.06.29';
+$ELISQLREPORTS_Version='3.08.03';
 if (__FILE__ == $_SERVER['SCRIPT_FILENAME']) die('You are not allowed to call this page directly.<p>You could try starting <a href="http://'.$_SERVER['SERVER_NAME'].'">here</a>.');
 $ELISQLREPORTS_plugin_dir='ELISQLREPORTS';
 /**
@@ -134,16 +134,28 @@ function ELISQLREPORTS_make_Backup($date_format, $backup_type = "manual", $db_na
 		if(substr(PHP_OS,0,3) == 'WIN')
 			$backup_command = '"'.(isset($mysql_basedir->Value)?trailingslashit(str_replace('\\', '/', $mysql_basedir->Value)).'bin/':'').'mysqldump.exe"';
 		else
-			$backup_command = (isset($mysql_basedir->Value)?trailingslashit($mysql_basedir->Value).'bin/':'').'mysqldump';		
+			$backup_command = (isset($mysql_basedir->Value)&&is_file(trailingslashit($mysql_basedir->Value).'bin/mysqldump')?trailingslashit($mysql_basedir->Value).'bin/':'').'mysqldump';		
 		$backup_command .= ' --user="'.$db_user.'" --password="'.$db_password.'" --add-drop-table --skip-lock-tables --host="'.$db_host.$db_port.$db_name;
 		if (isset($ELISQLREPORTS_settings_array["compress_backup"]) && $ELISQLREPORTS_settings_array["compress_backup"]) {
-			$backup_command .= ' | gzip';
+			$backup_command .= ' | gzip > ';
 			$backup_file .= '.gz';
-		}
-		passthru($backup_command.' > "'.$backup_file.'"', $errors);
+		} else
+			$backup_command .= ' -r ';
+		passthru($backup_command.'"'.$backup_file.'"', $errors);
 		$return = "Command Line Backup of $subject returned $errors error".($error!=1?'s':'');
 	} elseif ($ELISQLREPORTS_backup_file = fopen($backup_file, 'w')) {
-		fwrite($ELISQLREPORTS_backup_file, "/* Backup of $db_name on $db_host at $db_date */\n\n");
+		fwrite($ELISQLREPORTS_backup_file, '/* Backup of $db_name on $db_host at $db_date */
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE=\'+00:00\' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE=\'NO_AUTO_VALUE_ON_ZERO\' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+');
 		$sql = "show full tables where Table_Type = 'BASE TABLE'";
 		$result = mysql_query($sql);
 		$errors = "";
@@ -288,7 +300,7 @@ function ELISQLREPORTS_restore_backup($file_sql) {
 		$errors = array();
 		$startpos = 0;
 		while ($endpos = strpos($full_sql, ";\n", $startpos)) {
-			if ($sql = trim(@preg_replace("|/\*.+\*/\n|", "", substr($full_sql, $startpos, $endpos - $startpos)).' ')) {
+			if ($sql = trim(@preg_replace("|/\*.+\*/[;\t \r\n]*|", "", substr($full_sql, $startpos, $endpos - $startpos)).' ')) {
 				if (mysql_query($sql))
 					$queries++;
 				else
@@ -541,7 +553,7 @@ function ELISQLREPORTS_settings() {
 						if(substr(PHP_OS,0,3) == 'WIN')
 							$backup_command = '"'.(isset($mysql_basedir->Value)?trailingslashit(str_replace('\\', '/', $mysql_basedir->Value)).'bin/':'').'mysql.exe"';
 						else
-							$backup_command = (isset($mysql_basedir->Value)?trailingslashit($mysql_basedir->Value).'bin/':'').'mysql';
+							$backup_command = (isset($mysql_basedir->Value)&&is_file(trailingslashit($mysql_basedir->Value).'bin/mysql')?trailingslashit($mysql_basedir->Value).'bin/':'').'mysql';
 						if (strpos($_POST['DB_HOST'], ':')) {
 							list($db_host, $db_port) = explode(':', $_POST['DB_HOST'], 2);
 							if (is_numeric($db_port))
@@ -571,7 +583,7 @@ function ELISQLREPORTS_settings() {
 							} else
 								echo '<li>ERROR: Failed to extract Zip Archive!</li><br>';
 						} elseif (substr($_POST['db_date'], -4) == '.sql') {
-							passthru($backup_command.' < '.trailingslashit($ELISQLREPORTS_settings_array['backup_dir']).$_POST['db_date'], $errors);
+							passthru($backup_command.' -e "source '.trailingslashit($ELISQLREPORTS_settings_array['backup_dir']).$_POST['db_date'].'"', $errors);
 							echo "<li>Restore process executed MySQL with $errors error".($errors==1?'':'s').'!</li><br>';
 						}
 					} else {

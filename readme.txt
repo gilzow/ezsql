@@ -5,10 +5,10 @@ Author URI: http://wordpress.ieonly.com/category/my-plugins/
 Contributors: scheeeli
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7K3TSGPAENSGS
 Tags: plugin, admin, reports, dashboard, sql, query, shortcode, mysql, cron, schedule, database, backup
-Stable tag: 3.06.29
-Version: 3.06.29
+Stable tag: 3.08.03
+Version: 3.08.03
 Requires at least: 2.6
-Tested up to: 3.5.1
+Tested up to: 3.6
 
 Create and save SQL Reports in your WP Admin and place them on pages and posts with a shortcode. Keep your database safe with automatic backups.
 
@@ -21,7 +21,7 @@ There is also an shortcode for the wpdb::get_var function that you can use to di
 
 Now your data can be automatically saved and archived every hour and/or every day, and backups can be emailed to the address you specify. You can also restore the data to your WP DB or an external DB, which makes copying your database to another server and easy task.
 
-Updated June-29th
+Updated August-3rd
 
 == Installation ==
 
@@ -53,6 +53,9 @@ SELECT display_name FROM wp_users WHERE ID = '&lt;?php $current_user->ID ?>'</te
 1. This is a screenshot of the Plugin Settings and the Admin Menu with some example reports.
 
 == Changelog ==
+
+= 3.08.03 =
+* Improved the compatibility and reliability of the restore process.
 
 = 3.06.29 =
 * Add ability to place reports on the dashboard for a given Role.
@@ -108,6 +111,9 @@ SELECT display_name FROM wp_users WHERE ID = '&lt;?php $current_user->ID ?>'</te
 * First version uploaded to WordPress.
 
 == Upgrade Notice ==
+
+= 3.08.03 =
+Improved the compatibility and reliability of the restore process.
 
 = 3.06.29 =
 Add ability to place reports on the dashboard for a given Role.
