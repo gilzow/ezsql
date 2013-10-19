@@ -4,11 +4,11 @@ Author: Eli Scheetz
 Author URI: http://wordpress.ieonly.com/category/my-plugins/
 Contributors: scheeeli
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7K3TSGPAENSGS
-Tags: plugin, admin, reports, dashboard, sql, query, shortcode, mysql, cron, schedule, database, backup
-Stable tag: 3.08.03
-Version: 3.08.03
+Tags: plugin, widget, admin, reports, dashboard, sql, query, shortcode, mysql, cron, schedule, database, backup
+Stable tag: 3.10.19
+Version: 3.10.19
 Requires at least: 2.6
-Tested up to: 3.6
+Tested up to: 3.6.1
 
 Create and save SQL Reports in your WP Admin and place them on pages and posts with a shortcode. Keep your database safe with automatic backups.
 
@@ -21,7 +21,7 @@ There is also an shortcode for the wpdb::get_var function that you can use to di
 
 Now your data can be automatically saved and archived every hour and/or every day, and backups can be emailed to the address you specify. You can also restore the data to your WP DB or an external DB, which makes copying your database to another server and easy task.
 
-Updated August-3rd
+Updated October-19th
 
 == Installation ==
 
@@ -53,6 +53,11 @@ SELECT display_name FROM wp_users WHERE ID = '&lt;?php $current_user->ID ?>'</te
 1. This is a screenshot of the Plugin Settings and the Admin Menu with some example reports.
 
 == Changelog ==
+
+= 3.10.19 =
+* Fixed table header row that contains column names.
+* Added an SQL Reports widget for the sidebar and footer area.
+* Added support for multiple queries on one report.
 
 = 3.08.03 =
 * Improved the compatibility and reliability of the restore process.
@@ -111,6 +116,9 @@ SELECT display_name FROM wp_users WHERE ID = '&lt;?php $current_user->ID ?>'</te
 * First version uploaded to WordPress.
 
 == Upgrade Notice ==
+
+= 3.10.19 =
+Fixed table header row, added an SQL Reports widget, and support for multiple queries on one report.
 
 = 3.08.03 =
 Improved the compatibility and reliability of the restore process.
