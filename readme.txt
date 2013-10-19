@@ -1,22 +1,27 @@
-=== ELI's SQL Admin Reports with shortcode ===
+=== ELI's SQL Admin Reports Shortcode and DB Backup ===
 Plugin URI: http://wordpress.ieonly.com/category/my-plugins/sql-reports/
 Author: Eli Scheetz
 Author URI: http://wordpress.ieonly.com/category/my-plugins/
 Contributors: scheeeli
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7K3TSGPAENSGS
-Tags: plugin, admin, reports, sql, mysql, database, backup, query, custom, shortcode
-Stable tag: 1.3.03.02
-Version: 1.3.03.02
+Tags: plugin, widget, admin, reports, dashboard, sql, query, shortcode, mysql, cron, schedule, database, backup
+Stable tag: 3.10.19
+Version: 3.10.19
 Requires at least: 2.6
-Tested up to: 3.5.1
+Tested up to: 3.6.1
 
-This plugin allows you to create reports simply by entering in the SQL.
+Create and save SQL Reports in your WP Admin and place them on pages and posts with a shortcode. Keep your database safe with automatic backups.
 
 == Description ==
 
-Just place some SQL on in the box and save it as a report. You can save multiple reports and they will be listed on the Admin Menu so you can quickly run them again anytime with just one click. You can also put a report on a Page or Post using a shortcode like [SQLREPORT name="My Report" style="padding: 6px;" /]
+Just place some SQL on in the box and save it as a report. You can save multiple reports and they will be listed on the Admin Menu so you can quickly run them again anytime with just one click. You can place your reports on the User's Dashboard based on Roles. You can also put a report on a Page or Post using a shortcode like [SQLREPORT name="My Report" style="padding: 6px;" /]
 
-Updated March-5th
+There is also an shortcode for the wpdb::get_var function that you can use to display a single value from your database. For example, this will display the number of users on your site:
+[sqlgetvar]SELECT COUNT(*) FROM wp_users[/sqlgetvar]
+
+Now your data can be automatically saved and archived every hour and/or every day, and backups can be emailed to the address you specify. You can also restore the data to your WP DB or an external DB, which makes copying your database to another server and easy task.
+
+Updated October-19th
 
 == Installation ==
 
@@ -33,19 +38,46 @@ Start Creating and Saving Reports.
 
 Just use the shortcode SQLREPORT like this [SQLREPORT name="My Report" style="border: 2px solid #CCCCCC; padding: 6px;" /] but be sure the name attribute matches the exact name of a report you have already created.
 
-= How do I use a global variable in one of my reports SQL? =
+= How do I use a global variable in one of my SQL queries? =
 
-SELECT display_name FROM wp_users WHERE ID = '<?php $current_user->ID ?>'
+Note: This < does not display properly on web pages so I used the HTML code &lt; in this example, > works...
+
+SELECT display_name FROM wp_users WHERE ID = '&lt;?php $current_user->ID ?>'</textarea>
 (I know there are other ways to get the display name in WordPress, this is just a simple example to illustrate the proper syntax.)
 
-SELECT * FROM wp_users WHERE user_registered > '<?php $_GET[thedate] ?>'
+<textarea>SELECT * FROM wp_users WHERE user_registered > '&lt;?php $_GET[thedate] ?>'</textarea>
 (note: this example assumes you are going to pass 'thedate' as a GET variable in the query string and, as this example shows, don't use quotes inside the PHP brackets.)
 
 == Screenshots ==
 
-1. This is a screen shot of the Admin Menu with some example reports.
+1. This is a screenshot of the Plugin Settings and the Admin Menu with some example reports.
 
 == Changelog ==
+
+= 3.10.19 =
+* Fixed table header row that contains column names.
+* Added an SQL Reports widget for the sidebar and footer area.
+* Added support for multiple queries on one report.
+
+= 3.08.03 =
+* Improved the compatibility and reliability of the restore process.
+
+= 3.06.29 =
+* Add ability to place reports on the dashboard for a given Role.
+
+= 3.06.24 =
+* Created a second method for backups that uses the command line mysql.
+* Made compression optional and backup location changable.
+* Made restore function able to connect to external an DB.
+* Fixed shortcode to work with sanitize_title.
+
+= 3.06.14 =
+* Added a WP cron scheduler for hourly and daily backups.
+* Upgraded the Backup process to ZIP and email all backups.
+* Added a shortcode for wpdb::get_var
+
+= 1.3.03.24 =
+* Fixed the Backup process to capture VIEW definitions properly.
 
 = 1.3.03.02 =
 * Added database backup feature.
@@ -84,6 +116,24 @@ SELECT * FROM wp_users WHERE user_registered > '<?php $_GET[thedate] ?>'
 * First version uploaded to WordPress.
 
 == Upgrade Notice ==
+
+= 3.10.19 =
+Fixed table header row, added an SQL Reports widget, and support for multiple queries on one report.
+
+= 3.08.03 =
+Improved the compatibility and reliability of the restore process.
+
+= 3.06.29 =
+Add ability to place reports on the dashboard for a given Role.
+
+= 3.06.24 =
+Created a second method for backups that uses the command line mysql, made compression optional and backup location changable, restore function able to connect to an external DB, and fixed shortcode to work with sanitize_title.
+
+= 3.06.14 =
+Added scheduler for hourly and daily backups, upgraded the Backup process to ZIP and email all backups, and added a shortcode for get_var.
+
+= 1.3.03.24 =
+Fixed the Backup process to capture VIEW definitions properly.
 
 = 1.3.03.02 =
 Added database backup feature and fixed Report name issue when using apostrophes.
