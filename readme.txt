@@ -5,10 +5,10 @@ Author URI: http://wordpress.ieonly.com/category/my-plugins/
 Contributors: scheeeli
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7K3TSGPAENSGS
 Tags: plugin, widget, admin, reports, dashboard, sql, query, shortcode, mysql, cron, schedule, database, backup
-Stable tag: 3.10.19
-Version: 3.10.19
+Stable tag: 4.1.76
+Version: 4.1.76
 Requires at least: 2.6
-Tested up to: 3.6.1
+Tested up to: 3.9
 
 Create and save SQL Reports in your WP Admin and place them on pages and posts with a shortcode. Keep your database safe with automatic backups.
 
@@ -16,12 +16,14 @@ Create and save SQL Reports in your WP Admin and place them on pages and posts w
 
 Just place some SQL on in the box and save it as a report. You can save multiple reports and they will be listed on the Admin Menu so you can quickly run them again anytime with just one click. You can place your reports on the User's Dashboard based on Roles. You can also put a report on a Page or Post using a shortcode like [SQLREPORT name="My Report" style="padding: 6px;" /]
 
+Updated May-6th
+
 There is also an shortcode for the wpdb::get_var function that you can use to display a single value from your database. For example, this will display the number of users on your site:
 [sqlgetvar]SELECT COUNT(*) FROM wp_users[/sqlgetvar]
 
-Now your data can be automatically saved and archived every hour and/or every day, and backups can be emailed to the address you specify. You can also restore the data to your WP DB or an external DB, which makes copying your database to another server and easy task.
+= Automatic Database Backups =
 
-Updated October-19th
+Your database can be automatically saved and archived every hour and/or every day, and backups can be emailed to the address you specify. You can also restore the data to your WP DB or an external DB, which makes copying your database to another server and easy task.
 
 == Installation ==
 
@@ -38,12 +40,12 @@ Start Creating and Saving Reports.
 
 Just use the shortcode SQLREPORT like this [SQLREPORT name="My Report" style="border: 2px solid #CCCCCC; padding: 6px;" /] but be sure the name attribute matches the exact name of a report you have already created.
 
-= How do I use a global variable in one of my SQL queries? =
+= How do I use a global PHP variable in one of my SQL queries? =
 
 Note: This < does not display properly on web pages so I used the HTML code &lt; in this example, > works...
 
-SELECT display_name FROM wp_users WHERE ID = '&lt;?php $current_user->ID ?>'</textarea>
-(I know there are other ways to get the display name in WordPress, this is just a simple example to illustrate the proper syntax.)
+SELECT display_name FROM wp_users WHERE ID = '&lt;?php $current_user->ID ?>'
+(There are other ways to get the display name in WordPress, this is just a simple example to illustrate the proper syntax.)
 
 <textarea>SELECT * FROM wp_users WHERE user_registered > '&lt;?php $_GET[thedate] ?>'</textarea>
 (note: this example assumes you are going to pass 'thedate' as a GET variable in the query string and, as this example shows, don't use quotes inside the PHP brackets.)
@@ -53,6 +55,11 @@ SELECT display_name FROM wp_users WHERE ID = '&lt;?php $current_user->ID ?>'</te
 1. This is a screenshot of the Plugin Settings and the Admin Menu with some example reports.
 
 == Changelog ==
+
+= 4.1.76 =
+* Made minor layout changes and enhancements to the Edit Reports page.
+* Fixed the Delete Report button to work even when the queries fails.
+* moved to the global wpdb object for full compatibility with WP 3.9 on MySQL 5.5.
 
 = 3.10.19 =
 * Fixed table header row that contains column names.
@@ -93,29 +100,19 @@ SELECT display_name FROM wp_users WHERE ID = '&lt;?php $current_user->ID ?>'</te
 = 1.2.09.23 =
 * Added css classes to the Table and TRs for better style control.
 
-= 1.2.09.02 =
-* Fixed auto sort links and removed them from showing on finished reports.
-
 = 1.2.04.16 =
 * Added error message to the Edit Report Page if SQL statement fails.
 
 = 1.2.04.06 =
 * Added shortcode support so you can put your reports onto Pages and Posts.
 
-= 1.2.03.16 =
-* Added basic sort capability by linking column names.
-
 = 1.1.12.16 =
 * Added styled DIV around Reports with ID tag so that you can customize the style.
 
-= 1.1.12.15 =
-* Fixed aditional plugin links.
-* Made the Save button label dynamic depending on the state of the report fields.
-
-= 1.1.12.14 =
-* First version uploaded to WordPress.
-
 == Upgrade Notice ==
+
+= 4.1.76 =
+Made minor layout changes to the Edit Reports page, fixed the Delete Report button to work on failed queries, and used wpdb for full compatibility with WP 3.9.
 
 = 3.10.19 =
 Fixed table header row, added an SQL Reports widget, and support for multiple queries on one report.
@@ -147,21 +144,8 @@ Added eval function to take PHP code in the SQL Statement.
 = 1.2.09.23 =
 Added css classes to the Table and TRs for better style control.
 
-= 1.2.09.02 =
-Fixed auto sort links and removed them from showing on finished reports.
-
 = 1.2.04.06 =
 Added shortcode support so you can put your reports onto Pages and Posts.
 
-= 1.2.03.16 =
-Added basic sort capability by linking column names.
-
 = 1.1.12.16 =
 Added styled DIV around Reports with ID tag so that you can customize the style.
-
-= 1.1.12.15 =
-Fixed the aditional plugin links and made the Save button label dynamic.
-
-= 1.1.12.14 =
-First version available through WordPress.
-
