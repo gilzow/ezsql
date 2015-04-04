@@ -26,12 +26,12 @@
 	float: left; margin: 3px 5px;
 }
 
-#right-sidebar {
-	float: right; margin-right: 10px; width: 290px;
+.postbox {
+	margin-right: 10px;
 }
 
-#main-section {
-	margin-right: 320px;
+#ELISQLREPORTS-right-sidebar {
+	float: right; margin-right: 0;
 }
 
 .dashReport:before {
