@@ -1,14 +1,14 @@
-=== ELI's SQL Admin Reports Shortcode and DB Backup ===
+=== EZ DB Backup and SQL Reports Shortcode and Widget ===
 Plugin URI: http://wordpress.ieonly.com/category/my-plugins/sql-reports/
 Author: Eli Scheetz
 Author URI: http://wordpress.ieonly.com/category/my-plugins/
 Contributors: scheeeli
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7K3TSGPAENSGS
 Tags: plugin, widget, admin, reports, dashboard, sql, query, shortcode, mysql, cron, schedule, database, backup
-Stable tag: 4.1.76
-Version: 4.1.76
+Stable tag: 4.11.13
+Version: 4.11.13
 Requires at least: 2.6
-Tested up to: 3.9
+Tested up to: 4.1.1
 
 Create and save SQL Reports in your WP Admin and place them on pages and posts with a shortcode. Keep your database safe with automatic backups.
 
@@ -16,7 +16,7 @@ Create and save SQL Reports in your WP Admin and place them on pages and posts w
 
 Just place some SQL on in the box and save it as a report. You can save multiple reports and they will be listed on the Admin Menu so you can quickly run them again anytime with just one click. You can place your reports on the User's Dashboard based on Roles. You can also put a report on a Page or Post using a shortcode like [SQLREPORT name="My Report" style="padding: 6px;" /]
 
-Updated May-6th
+Updated April-3rd
 
 There is also an shortcode for the wpdb::get_var function that you can use to display a single value from your database. For example, this will display the number of users on your site:
 [sqlgetvar]SELECT COUNT(*) FROM wp_users[/sqlgetvar]
@@ -55,6 +55,10 @@ SELECT display_name FROM wp_users WHERE ID = '&lt;?php $current_user->ID ?>'
 1. This is a screenshot of the Plugin Settings and the Admin Menu with some example reports.
 
 == Changelog ==
+
+= 4.11.13 =
+* Fixed some minor bugs and improved the handling of multiple queries.
+* Added a call to do_shortcode to the query results so that shortcodes rendered in a report can be evaluated.
 
 = 4.1.76 =
 * Made minor layout changes and enhancements to the Edit Reports page.
@@ -110,6 +114,9 @@ SELECT display_name FROM wp_users WHERE ID = '&lt;?php $current_user->ID ?>'
 * Added styled DIV around Reports with ID tag so that you can customize the style.
 
 == Upgrade Notice ==
+
+= 4.11.13 =
+Fixed some minor bugs, improved the handling of multiple queries and added a call to do_shortcode to the query results.
 
 = 4.1.76 =
 Made minor layout changes to the Edit Reports page, fixed the Delete Report button to work on failed queries, and used wpdb for full compatibility with WP 3.9.
