@@ -781,7 +781,6 @@ function ELISQLREPORTS_menu() {
 			$GLOBALS["ELISQLREPORTS"]["settings_array"]["menu_display"] = intval($_POST["ELISQLREPORTS_menu_display"]);
 		if (isset($_POST["ELISQLREPORTS_default_styles"]))
 			$GLOBALS["ELISQLREPORTS"]["settings_array"]["default_styles"] = trim($_POST["ELISQLREPORTS_default_styles"]);
-		if ($GLOBALS["ELISQLREPORTS"]["settings_array"]["menu_group"] == 2)
 		$Full_plugin_logo_URL = $GLOBALS["ELISQLREPORTS"]["images_path"]."ELISQLREPORTS-16x16.gif";
 		update_option("ELISQLREPORTS_settings_array", $GLOBALS["ELISQLREPORTS"]["settings_array"]);
 		if (isset($_POST["rName"]))
